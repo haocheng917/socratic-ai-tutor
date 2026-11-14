@@ -1,9 +1,12 @@
 <script setup>
 import { ref } from 'vue'
+import { renderMarkdown } from '../utils/markdown' 
+
+const baseUrl = import.meta.env.VITE_API_BASE_URL
 
 const isChatStarted = ref(false)
 
-const messages = ref([{'role': 'user', 'content': 'hello'}, {'role': 'assistant', 'content': 'world xxxxxxxxxxxxxxxxxxxxxxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}, {'role': 'user', 'content': 'hello'}, {'role': 'assistant', 'content': 'world xxxxxxxxxxxxxxxxxxxxxxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}, {'role': 'user', 'content': 'hello'}, {'role': 'assistant', 'content': 'world xxxxxxxxxxxxxxxxxxxxxxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}, {'role': 'user', 'content': 'hello'}, {'role': 'assistant', 'content': 'world xxxxxxxxxxxxxxxxxxxxxxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}, {'role': 'user', 'content': 'hello'}, {'role': 'assistant', 'content': 'world xxxxxxxxxxxxxxxxxxxxxxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}, {'role': 'user', 'content': 'hello'}, {'role': 'assistant', 'content': 'world xxxxxxxxxxxxxxxxxxxxxxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}, {'role': 'user', 'content': 'hello'}, {'role': 'assistant', 'content': 'world xxxxxxxxxxxxxxxxxxxxxxsxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'}])
+const messages = ref([])
 
 let sessionId = null;
 
@@ -13,10 +16,17 @@ async function onFileSelect(event) {
   
   const formData = new FormData()
   formData.append('file', file)
+  isChatStarted.value = true
+  console.log('正在上传')
 
   try {
     isSending.value = true
-    const res = await fetch('/tutor/start', {
+
+    sessionId = 1
+    messages.value.push({ 'role': 'assistant', 'content': `你好！很高兴和你一起探讨这道几何题。这是一个非常经典的旋转与最短路径结合的问题，里面有很巧妙的转化。\n\n我们一句一句来分析题目，老师先给你留第一个小问题，你思考一下：\n\n**已知条件里说，\\(\\triangle ABC\\) 是等边三角形，\\(BD\\) 是高。**\n根据等边三角形“三线合一”的性质，你能得出高 \\(BD\\) 对边 \\(AC\\) 有什么特殊的几何意义吗？点 \\(E\\) 在 \\(BD\\) 上，这就意味着线段 \\(AE\\) 和 \\(CE\\) 有什么关系？\n\n（你先想一想，告诉我你的发现，我们一步一步往深处走。）` })
+    return
+
+    const res = await fetch(`${baseUrl}/tutor/start`, {
       method: 'POST',
       body: formData
     })
@@ -24,9 +34,9 @@ async function onFileSelect(event) {
     const data = await res.json()
     sessionId = data.id;
     messages.value.push({ 'role': 'assistant', 'content': data.content })
-    isChatStarted = true
   } catch (error) {
     console.error('上传失败：', error)
+    isChatStarted.value = false
   } finally {
     isSending.value = false
   }
@@ -47,7 +57,9 @@ async function onSend() {
 
   try {
     isSending.value = true
-    const res = await fetch('/tutor/chat', {
+    messages.value.push({ 'role': 'assistant', 'content': `你好！很高兴和你一起探讨这道几何题。这是一个非常经典的旋转与最短路径结合的问题，里面有很巧妙的转化。\n\n我们一句一句来分析题目，老师先给你留第一个小问题，你思考一下：\n\n**已知条件里说，\\(\\triangle ABC\\) 是等边三角形，\\(BD\\) 是高。**\n根据等边三角形“三线合一”的性质，你能得出高 \\(BD\\) 对边 \\(AC\\) 有什么特殊的几何意义吗？点 \\(E\\) 在 \\(BD\\) 上，这就意味着线段 \\(AE\\) 和 \\(CE\\) 有什么关系？\n\n（你先想一想，告诉我你的发现，我们一步一步往深处走。）` })
+    return
+    const res = await fetch(`${baseUrl}/tutor/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -70,7 +82,10 @@ async function onSend() {
   <div class="chat" v-if="isChatStarted">
     <div class="chat-body">
       <div v-for="msg in messages" :class="msg.role === 'user' ? 'message right' : 'message left'">
-        <div class="bubble">{{ msg.content }}</div>
+        <div 
+          class="bubble markdown-body" 
+          v-html="renderMarkdown(msg.content)"
+        ></div>
       </div>
       <div v-if="isSending" class="message left">
         <div class="bubble">正在回复中</div>
