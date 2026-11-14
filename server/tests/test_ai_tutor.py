@@ -1,7 +1,7 @@
 import os
 
 from fastapi.testclient import TestClient
-from socratic_ai_tutor.main import app
+from server.src.socratic_ai_tutor.main import app
 
 client = TestClient(app)
 
