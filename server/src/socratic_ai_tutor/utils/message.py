@@ -14,7 +14,7 @@ def resolve_messages_urls(messages: list):
         if content['type'] != 'image_url':
             continue
 
-        content['image_url']['url'] = StorageService.create_presign(
+        content['image_url']['url'] = StorageService.get_cached_url(
             content['image_url']['url'])
 
     print(new_messages)
