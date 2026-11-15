@@ -10,32 +10,62 @@ const messages = ref([])
 
 let sessionId = null;
 
+async function upload(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  console.log('正在上传')
+  try {
+    const res = await fetch(`${baseUrl}/upload`, {
+      method: 'POST',
+      body: formData
+    })
+    return await res.json()
+  } catch (error) {
+    console.error('上传失败：', error)
+    throw new Error('上传失败：', error)
+  }
+}
+
 async function onFileSelect(event) {
   const file = event.target.files[0]
   if (!file) return
   
-  const formData = new FormData()
-  formData.append('file', file)
   isChatStarted.value = true
-  console.log('正在上传')
+
+  isSending.value = true
+  const img = await upload(file)
+
+  messages.value.push({
+    'role': 'user', 'content': [
+      {
+        "type": "image_url",
+        "image_url": { "url": img.url },
+      }
+    ]
+  })
 
   try {
-    isSending.value = true
-
-    sessionId = 1
-    messages.value.push({ 'role': 'assistant', 'content': `你好！很高兴和你一起探讨这道几何题。这是一个非常经典的旋转与最短路径结合的问题，里面有很巧妙的转化。\n\n我们一句一句来分析题目，老师先给你留第一个小问题，你思考一下：\n\n**已知条件里说，\\(\\triangle ABC\\) 是等边三角形，\\(BD\\) 是高。**\n根据等边三角形“三线合一”的性质，你能得出高 \\(BD\\) 对边 \\(AC\\) 有什么特殊的几何意义吗？点 \\(E\\) 在 \\(BD\\) 上，这就意味着线段 \\(AE\\) 和 \\(CE\\) 有什么关系？\n\n（你先想一想，告诉我你的发现，我们一步一步往深处走。）` })
-    return
-
     const res = await fetch(`${baseUrl}/tutor/start`, {
       method: 'POST',
-      body: formData
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        'content': [
+          {
+            "type": "image_url",
+            "image_url": {"url": img.key},
+          }
+        ]
+      })
     })
     
     const data = await res.json()
     sessionId = data.id;
     messages.value.push({ 'role': 'assistant', 'content': data.content })
   } catch (error) {
-    console.error('上传失败：', error)
+    console.error(error)
+    messages.value = []
     isChatStarted.value = false
   } finally {
     isSending.value = false
@@ -57,14 +87,12 @@ async function onSend() {
 
   try {
     isSending.value = true
-    messages.value.push({ 'role': 'assistant', 'content': `你好！很高兴和你一起探讨这道几何题。这是一个非常经典的旋转与最短路径结合的问题，里面有很巧妙的转化。\n\n我们一句一句来分析题目，老师先给你留第一个小问题，你思考一下：\n\n**已知条件里说，\\(\\triangle ABC\\) 是等边三角形，\\(BD\\) 是高。**\n根据等边三角形“三线合一”的性质，你能得出高 \\(BD\\) 对边 \\(AC\\) 有什么特殊的几何意义吗？点 \\(E\\) 在 \\(BD\\) 上，这就意味着线段 \\(AE\\) 和 \\(CE\\) 有什么关系？\n\n（你先想一想，告诉我你的发现，我们一步一步往深处走。）` })
-    return
     const res = await fetch(`${baseUrl}/tutor/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ 'session_id': sessionId, 'user_text': user_text })
+      body: JSON.stringify({ 'session_id': sessionId, 'content': user_text })
     })
 
     const data = await res.json()
@@ -82,10 +110,14 @@ async function onSend() {
   <div class="chat" v-if="isChatStarted">
     <div class="chat-body">
       <div v-for="msg in messages" :class="msg.role === 'user' ? 'message right' : 'message left'">
-        <div 
-          class="bubble markdown-body" 
-          v-html="renderMarkdown(msg.content)"
-        ></div>
+        <div class="bubble">
+          <div v-if="typeof msg.content === 'string'" class="markdown-body" v-html="renderMarkdown(msg.content)"></div>
+          <template v-else-if="Array.isArray(msg.content)">
+            <template v-for="item in msg.content">
+              <img v-if="item.type==='image_url'" :src="item.image_url.url" alt="图片" class="image" />
+            </template>
+          </template>
+        </div>
       </div>
       <div v-if="isSending" class="message left">
         <div class="bubble">正在回复中</div>

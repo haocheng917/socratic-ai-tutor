@@ -13,9 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 client = AsyncOpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
 
 
-async def start(image_bytes: bytes, image_ext: str, db: AsyncSession):
-    key = StorageService.upload_image(image_bytes, image_ext)
-
+async def start(content, db: AsyncSession):
     messages = [
         {
             "role": "system",
@@ -23,12 +21,7 @@ async def start(image_bytes: bytes, image_ext: str, db: AsyncSession):
         },
         {
             "role": "user",
-            "content": [
-                {
-                    "type": "image_url",
-                    "image_url": {"url": key},
-                },
-            ],
+            "content": content
         },
     ]
 
@@ -48,7 +41,7 @@ async def start(image_bytes: bytes, image_ext: str, db: AsyncSession):
     return {"id": session_id, "content": content}
 
 
-async def chat(session_id: int, user_text: str, db: AsyncSession):
+async def chat(session_id: int, user_text, db: AsyncSession):
     messages = await TutorRepository.get_messages(db, session_id)
     messages.append({"role": "user", "content": user_text})
 

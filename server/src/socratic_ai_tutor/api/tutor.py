@@ -1,9 +1,9 @@
 import os
 
-from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..schema.tutor import ChatRequest
+from ..schema.tutor import ChatRequest, StartRequest
 from ..database import get_db
 from ..services import tutor
 
@@ -11,12 +11,11 @@ router = APIRouter(prefix="/tutor", tags=["Tutor"])
 
 
 @router.post('/start')
-async def start(file: UploadFile, db: AsyncSession = Depends(get_db)):
-    image_bytes = await file.read()
-    image_ext = os.path.splitext(file.filename)[1].lower()
-    return await tutor.start(image_bytes, image_ext, db)
+async def start(req: StartRequest, db: AsyncSession = Depends(get_db)):
+    content_dict = req.model_dump()["content"]
+    return await tutor.start(content_dict, db)
 
 
 @router.post('/chat')
 async def chat(req: ChatRequest, db: AsyncSession = Depends(get_db)):
-    return await tutor.chat(req.session_id, req.user_text, db)
+    return await tutor.chat(req.session_id, req.content, db)
