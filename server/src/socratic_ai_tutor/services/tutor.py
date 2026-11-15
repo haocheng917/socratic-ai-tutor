@@ -1,4 +1,5 @@
 from typing import cast
+from fastapi import HTTPException
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
@@ -60,3 +61,10 @@ async def chat(session_id: int, user_text, db: AsyncSession):
     await TutorRepository.update_messages(db, session_id, messages)
 
     return {"id": session_id, "content": content}
+
+
+async def get_history(session_id: int, db: AsyncSession):
+    messages = await TutorRepository.get_messages(db, session_id)
+    if messages == []:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    return messages
