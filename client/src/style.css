@@ -8,9 +8,16 @@ body {
   margin: 0;
 }
 
-.page {
+.layout-container {
   height: 100vh;
-  width: 100%;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+}
+
+.main-content {
+  height: 100%;
+  flex: 1
 }
 
 .chat {
@@ -136,4 +143,103 @@ body {
   transform: scale(0.96);
   /* 按下缩小 */
   box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+}
+
+.drawer-box {
+  width: 0;
+  background-color: hsl(180, 10%, 95%);
+  padding: 0px;
+  transition: width 0.3s ease;
+  overflow: hidden;
+  overflow-x: hidden;
+}
+
+.drawer-box.open {
+  width: 260px;
+  border-right: 1px solid #ddd;
+}
+
+.drawer-content {
+  height: 100%;
+  width: 260px;
+  padding: 8px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.history-list {
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(150, 12%, 84%) transparent;
+}
+
+.history-item {
+  padding: 8px 10px;
+  /* 浅灰背景 */
+  border-radius: 8px;
+  /* 圆角 */
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  /* 文字太长变成省略号（很实用） */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-item:hover {
+  background: hsl(180, 50%, 90%);
+  color: hsl(180, 50%, 35%);
+}
+
+.drawer-header {
+  display: flex;
+  font-size: 20px;
+  padding: 8px;
+  width: 100%;
+}
+
+.project-name {
+  margin-right: auto;
+  margin-left: 0px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  padding: 12px
+}
+
+.open-btn,
+.new-btn {
+  display: flex;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  margin: 0;
+}
+
+.close-btn {
+  display: flex;
+  border: none;
+  border-radius: 8px;
+  background: hsl(180, 10%, 95%);
+}
+
+.open-btn svg,
+.new-btn svg {
+  display: block;
+}
+
+.title {
+  margin: 0;
+  margin-right: auto;
 }
