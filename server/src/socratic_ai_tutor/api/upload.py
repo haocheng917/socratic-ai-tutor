@@ -7,6 +7,7 @@ from ..services.oss import StorageService
 
 router = APIRouter()
 
+
 @router.post('/upload')
 async def upload_image(file: UploadFile):
     content = await file.read()
@@ -29,4 +30,5 @@ async def upload_image(file: UploadFile):
     except Exception as e:
         raise HTTPException(400, f'图片解析失败: {str(e)}')
 
-    return {'key': StorageService.upload_image(content, real_ext)}
+    img_key = StorageService.upload_image(content, real_ext)
+    return {'key': img_key, 'url': StorageService.get_cached_url(img_key)}
