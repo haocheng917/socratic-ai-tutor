@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from .database import engine
 from .models import Base
-from .api.tutor import router
+from .api import tutor, upload
 
 
 @asynccontextmanager
@@ -23,7 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(router)
+app.include_router(tutor.router)
+app.include_router(upload.router)
 
 
 @app.get('/')
