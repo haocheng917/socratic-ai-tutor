@@ -22,6 +22,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 12px;
+  justify-content: center;
 }
 
 .chat-body {
@@ -103,14 +104,36 @@ body {
 
 .chat-send:active {
   transform: scale(0.94);
-  /* 按下缩小一点 */
 }
 
 .chat-welcome {
-  justify-self: center;
+  text-align: center;
+}
+
+.chat-hint {
+  font-size: 24px;
 }
 
 .bubble>.image {
   max-width: 80%;
   border-radius: 8px;
+}
+
+.start-btn {
+  background: linear-gradient(135deg, hsl(180, 50%, 50%), hsl(200, 60%, 55%));
+  border-radius: 999px;
+  padding: 8px 12px;
+  height: 40px;
+  font-size: 18px;
+  color: #eee;
+}
+
+.start-btn>input {
+  display: none;
+}
+
+.start-btn:active {
+  transform: scale(0.96);
+  /* 按下缩小 */
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
 }

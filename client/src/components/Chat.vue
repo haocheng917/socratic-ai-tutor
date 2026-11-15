@@ -107,37 +107,45 @@ async function onSend() {
 </script>
 
 <template>
-  <div class="chat" v-if="isChatStarted">
-    <div class="chat-body">
-      <div v-for="msg in messages" :class="msg.role === 'user' ? 'message right' : 'message left'">
-        <div class="bubble">
-          <div v-if="typeof msg.content === 'string'" class="markdown-body" v-html="renderMarkdown(msg.content)"></div>
-          <template v-else-if="Array.isArray(msg.content)">
-            <template v-for="item in msg.content">
-              <img v-if="item.type==='image_url'" :src="item.image_url.url" alt="图片" class="image" />
+  <div class="chat">
+    <template v-if="isChatStarted">
+      <div class="chat-body">
+        <div v-for="msg in messages" :class="msg.role === 'user' ? 'message right' : 'message left'">
+          <div class="bubble">
+            <div v-if="typeof msg.content === 'string'" class="markdown-body" v-html="renderMarkdown(msg.content)"></div>
+            <template v-else-if="Array.isArray(msg.content)">
+              <template v-for="item in msg.content">
+                <img v-if="item.type==='image_url'" :src="item.image_url.url" alt="图片" class="image" />
+              </template>
             </template>
-          </template>
+          </div>
+        </div>
+        <div v-if="isSending" class="message left">
+          <div class="bubble">正在回复中</div>
         </div>
       </div>
-      <div v-if="isSending" class="message left">
-        <div class="bubble">正在回复中</div>
+      <div class="chat-footer">
+        <textarea class="chat-input" placeholder="输入消息..." v-model="inputMessage" @keydown.enter.prevent="onSend"></textarea>
+        <button class="chat-send" @click="onSend" aria-label="发送">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5" />
+            <path d="M5 12l7-7 7 7" />
+          </svg>
+        </button>
+      </div>
+    </template>
+    <div v-else>
+      <div class="chat-welcome">
+        <p class="chat-hint">拍照以开始</p>
+        <label class="start-btn">
+          <input type="file" accept="image/*" @change="onFileSelect">
+          
+          上传图片
+        </label>
       </div>
     </div>
-    <div class="chat-footer">
-      <textarea class="chat-input" placeholder="输入消息..." v-model="inputMessage" @keydown.enter.prevent="onSend"></textarea>
-      <button class="chat-send" @click="onSend" aria-label="发送">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" stroke-width="2.5"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 19V5" />
-          <path d="M5 12l7-7 7 7" />
-        </svg>
-      </button>
-    </div>
-  </div>
-  <div v-else>
-    <p class="chat-welcome">拍照以开始</p>
-    <input type="file" accept="image/*" @change="onFileSelect">
   </div>
   
 </template>
