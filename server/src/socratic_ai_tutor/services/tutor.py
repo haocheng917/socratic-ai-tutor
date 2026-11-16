@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 client = AsyncOpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
 
 
-async def start(content, db: AsyncSession):
+async def start(content, user_id: int, db: AsyncSession):
     messages = [
         {
             "role": "system",
@@ -36,7 +36,7 @@ async def start(content, db: AsyncSession):
 
     content = response.choices[0].message.content
     messages.append({"role": "assistant", "content": content})
-    session_id = await TutorRepository.create_session(db, messages)
+    session_id = await TutorRepository.create_session(db, user_id, messages)
     print(response.usage)
 
     return {"id": session_id, "content": content}

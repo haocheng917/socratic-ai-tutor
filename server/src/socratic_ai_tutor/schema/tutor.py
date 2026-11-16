@@ -7,6 +7,7 @@ from openai.types.chat import ChatCompletionContentPartParam
 class StartRequest(BaseModel):
     content: Union[str, List[ChatCompletionContentPartParam]]
 
+
 class ChatRequest(BaseModel):
     session_id: int
     content: Union[str, List[ChatCompletionContentPartParam]]

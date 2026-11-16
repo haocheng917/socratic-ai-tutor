@@ -1,7 +1,10 @@
 from io import BytesIO
 
 from PIL import Image, UnidentifiedImageError
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+
+from socratic_ai_tutor.core.security import get_current_user
+from socratic_ai_tutor.models import User
 
 from ..services.oss import StorageService
 
@@ -9,7 +12,8 @@ router = APIRouter()
 
 
 @router.post('/upload')
-async def upload_image(file: UploadFile):
+async def upload_image(file: UploadFile,
+                       user: User = Depends(get_current_user)):
     content = await file.read()
 
     try:
