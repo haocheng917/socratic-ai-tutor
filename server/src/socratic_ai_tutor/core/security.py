@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +13,7 @@ from jwt import PyJWTError
 
 from socratic_ai_tutor.repository.user import UserRepository
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+security = HTTPBearer()
 
 
 def create_access_token(user_id: int) -> str:
@@ -25,16 +25,18 @@ def create_access_token(user_id: int) -> str:
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ):
+    token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
         user_id = int(payload.get('sub'))
     except (PyJWTError, TypeError):
-        raise HTTPException(status_code=401, detail="登录已过期，请重新登录")
+        raise HTTPException(status_code=401, detail="登录已过期，请重新登录",
+                            headers={"WWW-Authenticate": "Bearer"})
 
-    user = UserRepository.get_user_by_id(db, user_id)
+    user = await UserRepository.get_user_by_id(db, user_id)
 
     if not user:
         raise HTTPException(status_code=401, detail="用户不存在")

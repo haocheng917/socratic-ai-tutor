@@ -11,20 +11,18 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post('/register')
-async def register(
-        form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+async def register(data: UserRegister, db: AsyncSession = Depends(get_db)):
     try:
-        token = await auth.register(form_data.username, form_data.password, db)
+        token = await auth.register(data.username, data.password, db)
         return {"message": "注册成功", "access_token": token}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/login")
-async def login(
-        form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
     try:
-        token = await auth.login(form_data.username, form_data.password, db)
+        token = await auth.login(data.username, data.password, db)
         return {"access_token": token}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
