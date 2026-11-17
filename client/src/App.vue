@@ -1,14 +1,23 @@
 <script setup>
 import Chat from './components/Chat.vue'
 import SideDrawer from './components/SideDrawer.vue'
+import AuthPage from './components/AuthPage.vue'
 import { ref } from 'vue'
 
+const token = ref(localStorage.getItem('token') || '')
 const isDrawerOpen = ref(true)
+
+function onLogin(accessToken) {
+  token.value = accessToken
+  localStorage.setItem('token', accessToken)
+}
 
 </script>
 
 <template>
-  <div class="layout-container">
+  <AuthPage v-if="!token" @login-success="onLogin" />
+
+  <div v-else class="layout-container">
     <SideDrawer v-model="isDrawerOpen" />
     <div class="main-content">
       <header class="top-bar">
