@@ -5,6 +5,8 @@ import { renderMarkdown } from '../utils/markdown'
 const baseUrl = import.meta.env.VITE_API_BASE_URL
 
 const props = defineProps(['token'])
+const sessions = defineModel()
+
 const isChatStarted = ref(false)
 
 const messages = ref([])
@@ -19,7 +21,7 @@ async function upload(file) {
     const res = await fetch(`${baseUrl}/upload`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${props.token}`
       },
       body: formData
     })
@@ -53,7 +55,7 @@ async function onFileSelect(event) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${props.token}`
       },
       body: JSON.stringify({
         'content': [
@@ -68,6 +70,7 @@ async function onFileSelect(event) {
     const data = await res.json()
     sessionId = data.id;
     messages.value.push({ 'role': 'assistant', 'content': data.content })
+    sessions.value.push({ 'title': 'New chat', 'id': sessionId })
   } catch (error) {
     console.error(error)
     messages.value = []
@@ -96,7 +99,7 @@ async function onSend() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${props.token}`
       },
       body: JSON.stringify({ 'session_id': sessionId, 'content': user_text })
     })
