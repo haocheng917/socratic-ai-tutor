@@ -1,5 +1,28 @@
 <script setup>
+
+import { onMounted } from 'vue'
+
+const baseUrl = import.meta.env.VITE_API_BASE_URL
 const isOpen = defineModel() 
+const sessions = defineModel('sessions')
+const props = defineProps(['token'])
+
+
+onMounted(async () => {
+  try {
+    const res = await fetch(`${baseUrl}/tutor/sessions`, {
+      method: 'get',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${props.token}`
+      },
+    })
+    const data = await response.json()
+    sessions.value = data.sessions
+  } catch (err) {
+    console.error(err)
+  }
+})
 </script>
 
 <template>
@@ -16,24 +39,9 @@ const isOpen = defineModel()
         </button>
       </header>
       <div class="history-list">
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
-        <div class="history-item">帮我写一个快排</div>
-        <div class="history-item">解释一下微积分</div>
+        <div class="history-item" v-for="id, title in sessions">
+          {{ title }}
+        </div>
       </div>
     </div>
   </div>

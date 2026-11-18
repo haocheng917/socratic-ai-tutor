@@ -6,6 +6,7 @@ import { ref } from 'vue'
 
 const token = ref(localStorage.getItem('token') || '')
 const isDrawerOpen = ref(true)
+const sessions = ref([])
 
 function onLogin(accessToken) {
   token.value = accessToken
@@ -18,7 +19,7 @@ function onLogin(accessToken) {
   <AuthPage v-if="!token" @login-success="onLogin" />
 
   <div v-else class="layout-container">
-    <SideDrawer v-model="isDrawerOpen" />
+    <SideDrawer v-model="isDrawerOpen" v-model:sessions="sessions" :token="accessToken"/>
     <div class="main-content">
       <header class="top-bar">
         <button v-if="!isDrawerOpen" class="open-btn" @click="isDrawerOpen = !isDrawerOpen">
@@ -38,7 +39,7 @@ function onLogin(accessToken) {
           </svg>
         </button>
       </header>
-      <Chat :token="accessToken"/>
+      <Chat :token="accessToken" v-model="sessions" />
     </div>
   </div>
 </template>
