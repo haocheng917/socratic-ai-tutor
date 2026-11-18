@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
+from socratic_ai_tutor.models import User
 from socratic_ai_tutor.utils.message import resolve_messages_urls
 
 from .oss import StorageService
@@ -68,3 +69,10 @@ async def get_history(session_id: int, db: AsyncSession):
     if messages == []:
         raise HTTPException(status_code=404, detail="会话不存在")
     return messages
+
+
+async def get_sessions(user: User):
+    res = []
+    for session in user.sessions:
+        res.append({'id': session.id, 'title': session.title})
+    return res

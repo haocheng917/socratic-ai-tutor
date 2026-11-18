@@ -10,6 +10,7 @@ class Base(DeclarativeBase):
 class TutorSession(Base):
     __tablename__ = "tutor_sessions"
     id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String)
     messages: Mapped[list] = mapped_column(JSONB, default=list)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False)

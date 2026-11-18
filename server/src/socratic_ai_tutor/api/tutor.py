@@ -36,3 +36,10 @@ async def get_history(
     messages = await tutor.get_history(session_id, db)
 
     return {"session_id": session_id, "messages": messages}
+
+
+@router.get('sessions')
+async def get_sessions(
+    user: User = Depends(get_current_user),
+):
+    return {'sessions': tutor.get_sessions(user)}
