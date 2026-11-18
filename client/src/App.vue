@@ -38,7 +38,7 @@ function onLogin(accessToken) {
           </svg>
         </button>
       </header>
-      <Chat />
+      <Chat :token="accessToken"/>
     </div>
   </div>
 </template>

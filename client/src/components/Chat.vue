@@ -4,6 +4,7 @@ import { renderMarkdown } from '../utils/markdown'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL
 
+const props = defineProps(['token'])
 const isChatStarted = ref(false)
 
 const messages = ref([])
@@ -17,6 +18,9 @@ async function upload(file) {
   try {
     const res = await fetch(`${baseUrl}/upload`, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
       body: formData
     })
     return await res.json()
@@ -48,7 +52,8 @@ async function onFileSelect(event) {
     const res = await fetch(`${baseUrl}/tutor/start`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         'content': [
@@ -90,7 +95,8 @@ async function onSend() {
     const res = await fetch(`${baseUrl}/tutor/chat`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({ 'session_id': sessionId, 'content': user_text })
     })
