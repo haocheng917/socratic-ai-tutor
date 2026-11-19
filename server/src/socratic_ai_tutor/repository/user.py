@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from socratic_ai_tutor.models import User
 
@@ -7,7 +8,8 @@ from socratic_ai_tutor.models import User
 class UserRepository:
     @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: int):
-        result = await db.execute(select(User).where(User.id == user_id))
+        result = await db.execute(select(User)
+                                  .options(selectinload(User.sessions)).where(User.id == user_id))
         return result.scalar_one_or_none()
 
     @staticmethod

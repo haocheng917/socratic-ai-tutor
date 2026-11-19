@@ -38,8 +38,8 @@ async def get_history(
     return {"session_id": session_id, "messages": messages}
 
 
-@router.get('sessions')
+@router.get('/sessions')
 async def get_sessions(
     user: User = Depends(get_current_user),
 ):
-    return {'sessions': tutor.get_sessions(user)}
+    return {'sessions': await tutor.get_sessions(user)}

@@ -3,21 +3,21 @@
 import { onMounted } from 'vue'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL
-const isOpen = defineModel() 
+const isOpen = defineModel()
 const sessions = defineModel('sessions')
 const props = defineProps(['token'])
 
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${baseUrl}/tutor/sessions`, {
+    const res = await fetch(`${baseUrl}/tutor/sessions/`, {
       method: 'get',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${props.token}`
       },
     })
-    const data = await response.json()
+    const data = await res.json()
     sessions.value = data.sessions
   } catch (err) {
     console.error(err)

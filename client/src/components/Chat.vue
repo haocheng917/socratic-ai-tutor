@@ -1,19 +1,16 @@
 <script setup>
 import { ref } from 'vue'
-import { renderMarkdown } from '../utils/markdown' 
+import { renderMarkdown } from '../utils/markdown'
+import { useChatStore } from '../stores/chat'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL
 
-const props = defineProps(['token'])
-const sessions = defineModel()
+const chat = useChatStore()
 
-const isChatStarted = ref(false)
+const props = defineProps(['token'])
+
 const isSending = ref(false)
 const uploadError = ref('')
-
-const messages = ref([])
-
-let sessionId = null;
 
 async function readError(res, prefix) {
   let detail = `HTTP ${res.status}`
@@ -62,8 +59,7 @@ async function onFileSelect(event) {
   try {
     const img = await upload(file)
 
-    isChatStarted.value = true
-    messages.value.push({
+    chat.messages.value.push({
       'role': 'user', 'content': [
         {
           "type": "image_url",
@@ -82,7 +78,7 @@ async function onFileSelect(event) {
         'content': [
           {
             "type": "image_url",
-            "image_url": {"url": img.key},
+            "image_url": { "url": img.key },
           }
         ]
       })
@@ -93,13 +89,12 @@ async function onFileSelect(event) {
     }
 
     const data = await res.json()
-    sessionId = data.id;
-    messages.value.push({ 'role': 'assistant', 'content': data.content })
-    sessions.value.push({ 'title': 'New chat', 'id': sessionId })
+    chat.currentSessionId = data.id;
+    chat.messages.value.push({ 'role': 'assistant', 'content': data.content })
+    chat.sessions.value.push({ 'title': 'New chat', 'id': chat.currentSessionId })
   } catch (error) {
     console.error(error)
-    messages.value = []
-    isChatStarted.value = false
+    chat.messages.value = []
     uploadError.value = error.message || '上传失败，请重试'
   } finally {
     isSending.value = false
@@ -111,11 +106,11 @@ const inputMessage = ref('')
 async function onSend() {
   if (isSending.value) return
   if (!inputMessage.value.trim()) return
-  if (!sessionId) return
+  if (!currentSessionId) return
 
   const user_text = inputMessage.value.trim()
-  messages.value.push({ 'role': 'user', 'content': user_text })
-  inputMessage.value = '' 
+  chat.messages.value.push({ 'role': 'user', 'content': user_text })
+  inputMessage.value = ''
 
   try {
     isSending.value = true
@@ -125,7 +120,7 @@ async function onSend() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${props.token}`
       },
-      body: JSON.stringify({ 'session_id': sessionId, 'content': user_text })
+      body: JSON.stringify({ 'session_id': chat.currentSessionId, 'content': user_text })
     })
 
     if (!res.ok) {
@@ -133,8 +128,8 @@ async function onSend() {
     }
 
     const data = await res.json()
-    sessionId = data.id;
-    messages.value.push({ 'role': 'assistant', 'content': data.content })
+    chat.currentSessionId = data.id;
+    chat.messages.value.push({ 'role': 'assistant', 'content': data.content })
   } catch (error) {
     console.error('发送失败：', error)
   } finally {
@@ -145,14 +140,15 @@ async function onSend() {
 
 <template>
   <div class="chat">
-    <template v-if="isChatStarted">
+    <template v-if="chat.currentSessionId !== null">
       <div class="chat-body">
-        <div v-for="msg in messages" :class="msg.role === 'user' ? 'message right' : 'message left'">
+        <div v-for="msg in chat.messages" :class="msg.role === 'user' ? 'message right' : 'message left'">
           <div class="bubble">
-            <div v-if="typeof msg.content === 'string'" class="markdown-body" v-html="renderMarkdown(msg.content)"></div>
+            <div v-if="typeof msg.content === 'string'" class="markdown-body" v-html="renderMarkdown(msg.content)">
+            </div>
             <template v-else-if="Array.isArray(msg.content)">
               <template v-for="item in msg.content">
-                <img v-if="item.type==='image_url'" :src="item.image_url.url" alt="图片" class="image" />
+                <img v-if="item.type === 'image_url'" :src="item.image_url.url" alt="图片" class="image" />
               </template>
             </template>
           </div>
@@ -162,10 +158,10 @@ async function onSend() {
         </div>
       </div>
       <div class="chat-footer">
-        <textarea class="chat-input" placeholder="输入消息..." v-model="inputMessage" @keydown.enter.prevent="onSend"></textarea>
+        <textarea class="chat-input" placeholder="输入消息..." v-model="inputMessage"
+          @keydown.enter.prevent="onSend"></textarea>
         <button class="chat-send" @click="onSend" aria-label="发送">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2.5"
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 19V5" />
             <path d="M5 12l7-7 7 7" />
@@ -186,5 +182,5 @@ async function onSend() {
       </div>
     </div>
   </div>
-  
+
 </template>
