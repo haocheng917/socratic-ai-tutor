@@ -8,49 +8,70 @@ const props = defineProps(['token'])
 const sessions = defineModel()
 
 const isChatStarted = ref(false)
+const isSending = ref(false)
+const uploadError = ref('')
 
 const messages = ref([])
 
 let sessionId = null;
 
+async function readError(res, prefix) {
+  let detail = `HTTP ${res.status}`
+  try {
+    const data = await res.json()
+    if (data && data.detail) {
+      detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)
+    }
+  } catch (e) {
+    // 响应不是 JSON，保留状态码信息
+  }
+  return `${prefix}：${detail}`
+}
+
 async function upload(file) {
   const formData = new FormData()
   formData.append('file', file)
-  console.log('正在上传')
-  try {
-    const res = await fetch(`${baseUrl}/upload`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${props.token}`
-      },
-      body: formData
-    })
-    return await res.json()
-  } catch (error) {
-    console.error('上传失败：', error)
-    throw new Error('上传失败：', error)
+
+  const res = await fetch(`${baseUrl}/upload`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${props.token}`
+    },
+    body: formData
+  })
+
+  if (!res.ok) {
+    throw new Error(await readError(res, '上传失败'))
   }
+
+  const data = await res.json()
+  if (!data || !data.key || !data.url) {
+    throw new Error('上传失败：服务端未返回图片地址')
+  }
+  return data
 }
 
 async function onFileSelect(event) {
   const file = event.target.files[0]
   if (!file) return
-  
-  isChatStarted.value = true
+  event.target.value = ''
 
   isSending.value = true
-  const img = await upload(file)
-
-  messages.value.push({
-    'role': 'user', 'content': [
-      {
-        "type": "image_url",
-        "image_url": { "url": img.url },
-      }
-    ]
-  })
+  uploadError.value = ''
 
   try {
+    const img = await upload(file)
+
+    isChatStarted.value = true
+    messages.value.push({
+      'role': 'user', 'content': [
+        {
+          "type": "image_url",
+          "image_url": { "url": img.url },
+        }
+      ]
+    })
+
     const res = await fetch(`${baseUrl}/tutor/start`, {
       method: 'POST',
       headers: {
@@ -66,7 +87,11 @@ async function onFileSelect(event) {
         ]
       })
     })
-    
+
+    if (!res.ok) {
+      throw new Error(await readError(res, '获取回复失败'))
+    }
+
     const data = await res.json()
     sessionId = data.id;
     messages.value.push({ 'role': 'assistant', 'content': data.content })
@@ -75,14 +100,13 @@ async function onFileSelect(event) {
     console.error(error)
     messages.value = []
     isChatStarted.value = false
+    uploadError.value = error.message || '上传失败，请重试'
   } finally {
     isSending.value = false
   }
 }
 
 const inputMessage = ref('')
-
-const isSending = ref(false)
 
 async function onSend() {
   if (isSending.value) return
@@ -104,11 +128,15 @@ async function onSend() {
       body: JSON.stringify({ 'session_id': sessionId, 'content': user_text })
     })
 
+    if (!res.ok) {
+      throw new Error(await readError(res, '发送失败'))
+    }
+
     const data = await res.json()
     sessionId = data.id;
     messages.value.push({ 'role': 'assistant', 'content': data.content })
   } catch (error) {
-    console.error('上传失败：', error)
+    console.error('发送失败：', error)
   } finally {
     isSending.value = false
   }
@@ -149,10 +177,12 @@ async function onSend() {
       <div class="chat-welcome">
         <p class="chat-hint">拍照以开始</p>
         <label class="start-btn">
-          <input type="file" accept="image/*" @change="onFileSelect">
-          
+          <input type="file" accept="image/*" :disabled="isSending" @change="onFileSelect">
+
           上传图片
         </label>
+        <p v-if="isSending" class="upload-status">正在上传图片...</p>
+        <p v-if="uploadError" class="upload-error">{{ uploadError }}</p>
       </div>
     </div>
   </div>

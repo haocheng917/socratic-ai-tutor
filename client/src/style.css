@@ -243,3 +243,14 @@ body {
   margin: 0;
   margin-right: auto;
 }
+.upload-error {
+  margin-top: 12px;
+  color: #d93025;
+  font-size: 14px;
+}
+
+.upload-status {
+  margin-top: 12px;
+  color: #666;
+  font-size: 14px;
+}
