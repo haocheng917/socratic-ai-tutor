@@ -6,7 +6,9 @@
 
 <script setup>
 
-import { compile, ref } from 'vue'
+import { ref } from 'vue'
+import ErrorNotice from './ErrorNotice.vue'
+import { readError, toErrorMessage } from '../utils/http'
 
 const emit = defineEmits(['login-success'])
 const baseUrl = import.meta.env.VITE_API_BASE_URL
@@ -15,8 +17,12 @@ const username = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const errorMessage = ref('')
+const isSubmitting = ref(false)
 
 async function handleLogin() {
+  if (isSubmitting.value) return
+  errorMessage.value = ''
+  isSubmitting.value = true
   try {
     const res = await fetch(`${baseUrl}/auth/login`, {
       method: 'POST',
@@ -28,17 +34,25 @@ async function handleLogin() {
         'password': password.value
       })
     })
-    const data = await res.json()
     if (!res.ok) {
-      throw new Error(data.detail || '登录失败')
+      throw new Error(await readError(res, '登录失败'))
+    }
+    const data = await res.json()
+    if (!data || !data.access_token) {
+      throw new Error('登录失败：服务端未返回令牌')
     }
     emit('login-success', data.access_token)
   } catch (error) {
-    errorMessage.value = error.message || '登录失败'
+    errorMessage.value = toErrorMessage(error, '登录失败')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
 async function handleRegister() {
+  if (isSubmitting.value) return
+  errorMessage.value = ''
+  isSubmitting.value = true
   try {
     if (password.value !== confirmPassword.value) {
       throw new Error('两次密码不一致')
@@ -53,13 +67,18 @@ async function handleRegister() {
         'password': password.value
       })
     })
-    const data = await res.json()
     if (!res.ok) {
-      throw new Error(data.detail || '注册失败')
+      throw new Error(await readError(res, '注册失败'))
+    }
+    const data = await res.json()
+    if (!data || !data.access_token) {
+      throw new Error('注册失败：服务端未返回令牌')
     }
     emit('login-success', data.access_token)
   } catch (error) {
-    errorMessage.value = error.message || '注册失败'
+    errorMessage.value = toErrorMessage(error, '注册失败')
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
@@ -118,8 +137,8 @@ async function handleRegister() {
         <input class="auth-tab-input" type="radio" name="auth-mode" id="auth-mode-register" />
 
         <div class="auth-tabs">
-          <label for="auth-mode-login">登录</label>
-          <label for="auth-mode-register">注册</label>
+          <label for="auth-mode-login" @click="errorMessage = ''">登录</label>
+          <label for="auth-mode-register" @click="errorMessage = ''">注册</label>
         </div>
 
         <!-- 登录表单：绑定 @submit.prevent="handleLogin" -->
@@ -129,9 +148,7 @@ async function handleRegister() {
             <p class="auth-subtitle">登录后继续你的学习旅程。</p>
           </header>
 
-          <p v-if="errorMessage" class="auth-error" role="alert">
-            {{ errorMessage }}
-          </p>
+          <ErrorNotice v-if="errorMessage" title="" :message="errorMessage" @dismiss="errorMessage = ''" />
 
           <div class="auth-field">
             <label for="login-username">用户名</label>
@@ -145,10 +162,12 @@ async function handleRegister() {
               placeholder="请输入密码" autocomplete="current-password" required />
           </div>
 
-          <button class="auth-submit" type="submit">登录</button>
+          <button class="auth-submit" type="submit" :disabled="isSubmitting">
+            {{ isSubmitting ? '登录中…' : '登录' }}
+          </button>
 
           <p class="auth-switch">
-            还没有账号？<label class="auth-link" for="auth-mode-register">立即注册</label>
+            还没有账号？<label class="auth-link" for="auth-mode-register" @click="errorMessage = ''">立即注册</label>
           </p>
         </form>
 
@@ -159,9 +178,7 @@ async function handleRegister() {
             <p class="auth-subtitle">几秒钟开始你的 AI 学习之旅。</p>
           </header>
 
-          <p v-if="errorMessage" class="auth-error" role="alert">
-            {{ errorMessage }}
-          </p>
+          <ErrorNotice v-if="errorMessage" title="" :message="errorMessage" @dismiss="errorMessage = ''" />
 
           <div class="auth-field">
             <label for="register-username">用户名</label>
@@ -183,10 +200,12 @@ async function handleRegister() {
               type="password" placeholder="请再次输入密码" autocomplete="new-password" required minlength="8" maxlength="32" />
           </div>
 
-          <button class="auth-submit" type="submit">创建账号</button>
+          <button class="auth-submit" type="submit" :disabled="isSubmitting">
+            {{ isSubmitting ? '创建中…' : '创建账号' }}
+          </button>
 
           <p class="auth-switch">
-            已有账号？<label class="auth-link" for="auth-mode-login">去登录</label>
+            已有账号？<label class="auth-link" for="auth-mode-login" @click="errorMessage = ''">去登录</label>
           </p>
         </form>
       </section>
@@ -479,6 +498,10 @@ async function handleRegister() {
   color: #b44136;
   font-size: 12.5px;
   line-height: 1.5;
+}
+
+.auth-form .error-notice {
+  margin-bottom: 16px;
 }
 
 .auth-error:empty {

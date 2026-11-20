@@ -1,29 +1,45 @@
 <script setup>
-import { ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { renderMarkdown } from '../utils/markdown'
 import { useChatStore } from '../stores/chat'
+import { readError, toErrorMessage } from '../utils/http'
+import ErrorNotice from './ErrorNotice.vue'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL
 
 const chat = useChatStore()
 
 const props = defineProps(['token'])
+const appSessions = defineModel()
 
 const isSending = ref(false)
 const uploadError = ref('')
+const sendError = ref('')
+const inputMessage = ref('')
+const chatBody = ref(null)
+const inputEl = ref(null)
 
-async function readError(res, prefix) {
-  let detail = `HTTP ${res.status}`
-  try {
-    const data = await res.json()
-    if (data && data.detail) {
-      detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)
+function scrollToBottom() {
+  nextTick(() => {
+    if (chatBody.value) {
+      chatBody.value.scrollTop = chatBody.value.scrollHeight
     }
-  } catch (e) {
-    // 响应不是 JSON，保留状态码信息
-  }
-  return `${prefix}：${detail}`
+  })
 }
+
+watch(
+  () => [chat.messages.length, isSending.value],
+  () => scrollToBottom(),
+)
+
+function resizeInput() {
+  const el = inputEl.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+}
+
+watch(inputMessage, () => nextTick(resizeInput))
 
 async function upload(file) {
   const formData = new FormData()
@@ -55,11 +71,12 @@ async function onFileSelect(event) {
 
   isSending.value = true
   uploadError.value = ''
+  sendError.value = ''
 
   try {
     const img = await upload(file)
 
-    chat.messages.value.push({
+    chat.messages.push({
       'role': 'user', 'content': [
         {
           "type": "image_url",
@@ -89,28 +106,31 @@ async function onFileSelect(event) {
     }
 
     const data = await res.json()
-    chat.currentSessionId = data.id;
-    chat.messages.value.push({ 'role': 'assistant', 'content': data.content })
-    chat.sessions.value.push({ 'title': 'New chat', 'id': chat.currentSessionId })
+    chat.currentSessionId = data.id
+    chat.messages.push({ 'role': 'assistant', 'content': data.content })
+    if (appSessions.value) {
+      appSessions.value.push({ 'title': '新对话', 'id': chat.currentSessionId })
+    }
   } catch (error) {
     console.error(error)
-    chat.messages.value = []
-    uploadError.value = error.message || '上传失败，请重试'
+    chat.messages = []
+    uploadError.value = toErrorMessage(error, '上传失败，请重试')
   } finally {
     isSending.value = false
   }
 }
 
-const inputMessage = ref('')
-
 async function onSend() {
   if (isSending.value) return
   if (!inputMessage.value.trim()) return
-  if (!currentSessionId) return
-
+  if (!chat.currentSessionId) return
   const user_text = inputMessage.value.trim()
-  chat.messages.value.push({ 'role': 'user', 'content': user_text })
+  chat.messages.push({ 'role': 'user', 'content': user_text })
   inputMessage.value = ''
+  sendError.value = ''
+  nextTick(() => {
+    resizeInput()
+  })
 
   try {
     isSending.value = true
@@ -128,59 +148,137 @@ async function onSend() {
     }
 
     const data = await res.json()
-    chat.currentSessionId = data.id;
-    chat.messages.value.push({ 'role': 'assistant', 'content': data.content })
+    chat.currentSessionId = data.id
+    chat.messages.push({ 'role': 'assistant', 'content': data.content })
   } catch (error) {
     console.error('发送失败：', error)
+    sendError.value = toErrorMessage(error, '发送失败，请稍后重试')
   } finally {
     isSending.value = false
   }
+}
+
+function onEnter(event) {
+  // 中文输入法组词时的回车用于确认候选词，不触发发送
+  if (event.isComposing || event.keyCode === 229) return
+  event.preventDefault()
+  onSend()
 }
 </script>
 
 <template>
   <div class="chat">
     <template v-if="chat.currentSessionId !== null">
-      <div class="chat-body">
-        <div v-for="msg in chat.messages" :class="msg.role === 'user' ? 'message right' : 'message left'">
-          <div class="bubble">
+      <div ref="chatBody" class="chat-body" aria-live="polite">
+        <div v-for="(msg, index) in chat.messages" :key="index"
+          :class="msg.role === 'user' ? 'message right' : 'message left'">
+          <div class="avatar" aria-hidden="true">
+            <template v-if="msg.role === 'user'">你</template>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9.8 9.8 0 0 1-3.2-.6L4 21l1.7-4.5A8 8 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z" />
+              <path d="M9 10.5h6M9 13.5h3.5" />
+            </svg>
+          </div>
+          <div class="bubble" :class="{ 'has-image': Array.isArray(msg.content) }">
             <div v-if="typeof msg.content === 'string'" class="markdown-body" v-html="renderMarkdown(msg.content)">
             </div>
             <template v-else-if="Array.isArray(msg.content)">
-              <template v-for="item in msg.content">
-                <img v-if="item.type === 'image_url'" :src="item.image_url.url" alt="图片" class="image" />
+              <template v-for="(item, itemIndex) in msg.content" :key="itemIndex">
+                <img v-if="item.type === 'image_url'" :src="item.image_url.url" alt="上传的题目图片" class="image" />
               </template>
             </template>
           </div>
         </div>
-        <div v-if="isSending" class="message left">
-          <div class="bubble">正在回复中</div>
+
+        <div v-if="isSending" class="message left" role="status" aria-label="AI 正在回复">
+          <div class="avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path
+                d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9.8 9.8 0 0 1-3.2-.6L4 21l1.7-4.5A8 8 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z" />
+              <path d="M9 10.5h6M9 13.5h3.5" />
+            </svg>
+          </div>
+          <div class="bubble typing-bubble">
+            <span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="typing-label">AI 正在思考</span>
+          </div>
         </div>
       </div>
-      <div class="chat-footer">
-        <textarea class="chat-input" placeholder="输入消息..." v-model="inputMessage"
-          @keydown.enter.prevent="onSend"></textarea>
-        <button class="chat-send" @click="onSend" aria-label="发送">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 19V5" />
-            <path d="M5 12l7-7 7 7" />
-          </svg>
-        </button>
+
+      <div class="chat-composer">
+        <div v-if="sendError" class="composer-error">
+          <ErrorNotice title="发送失败" :message="sendError" @dismiss="sendError = ''" />
+        </div>
+
+        <div class="chat-footer">
+          <textarea ref="inputEl" class="chat-input" rows="1" placeholder="说说你的思路，或者问我一个问题…"
+            v-model="inputMessage" aria-label="输入消息" @input="resizeInput"
+            @keydown.enter.exact="onEnter"></textarea>
+          <button class="chat-send" type="button" aria-label="发送消息"
+            :disabled="isSending || !inputMessage.trim()" @click="onSend">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5" />
+              <path d="M5 12l7-7 7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="chat-composer-hint">
+          <span><kbd>Enter</kbd> 发送 · <kbd>Shift</kbd> + <kbd>Enter</kbd> 换行</span>
+          <span>{{ isSending ? 'AI 正在组织下一步引导…' : 'AI 生成内容仅供学习参考' }}</span>
+        </div>
       </div>
     </template>
-    <div v-else>
-      <div class="chat-welcome">
-        <p class="chat-hint">拍照以开始</p>
-        <label class="start-btn">
-          <input type="file" accept="image/*" :disabled="isSending" @change="onFileSelect">
 
-          上传图片
-        </label>
-        <p v-if="isSending" class="upload-status">正在上传图片...</p>
-        <p v-if="uploadError" class="upload-error">{{ uploadError }}</p>
+    <div v-else class="chat-welcome">
+      <div class="welcome-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path
+            d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9.8 9.8 0 0 1-3.2-.6L4 21l1.7-4.5A8 8 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z" />
+          <path d="M9 10.5h6M9 13.5h3.5" />
+        </svg>
+      </div>
+
+      <p class="chat-eyebrow">Socratic Learning</p>
+      <h1 class="chat-hint">拍下题目，开始一场提问</h1>
+      <p class="chat-desc">AI 导师不会直接给答案，而是用一步步追问，陪你把思路真正想清楚。</p>
+
+      <label class="upload-card" :class="{ busy: isSending }">
+        <input type="file" accept="image/*" :disabled="isSending" @change="onFileSelect">
+        <span class="upload-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3" ry="3"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <path d="m21 15-4.5-4.5L7 20"></path>
+          </svg>
+        </span>
+        <span class="upload-copy">
+          <span class="upload-card-title">上传题目图片</span>
+          <span class="upload-card-hint">支持 JPG、PNG、WEBP、GIF</span>
+        </span>
+        <span class="upload-card-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M5 12h14"></path>
+            <path d="m13 6 6 6-6 6"></path>
+          </svg>
+        </span>
+      </label>
+
+      <p v-if="isSending" class="upload-status">
+        <span class="spinner" aria-hidden="true"></span>
+        正在上传图片并生成引导…
+      </p>
+
+      <div v-if="uploadError" class="welcome-error">
+        <ErrorNotice title="无法开始对话" :message="uploadError" @dismiss="uploadError = ''" />
       </div>
     </div>
   </div>
-
 </template>
