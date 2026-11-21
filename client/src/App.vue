@@ -21,6 +21,7 @@ function onLogin(accessToken) {
 function startNewChat() {
   chat.currentSessionId = null
   chat.messages = []
+  chat.title = '启问'
   chatKey.value += 1
 }
 
@@ -47,7 +48,7 @@ function startNewChat() {
         </button>
 
         <div class="top-bar-title">
-          <h1 class="title">启问</h1>
+          <h1 class="title">{{ chat.title }}</h1>
         </div>
 
         <button class="new-btn" type="button" @click="startNewChat">

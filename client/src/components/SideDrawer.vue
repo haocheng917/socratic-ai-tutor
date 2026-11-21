@@ -12,8 +12,8 @@ const props = defineProps(['token'])
 const emit = defineEmits(['openVipPage'])
 const chat = useChatStore()
 
-function selectSession(id) {
-  chat.selectSession(id)
+function selectSession(id, sessionTitle) {
+  chat.selectSession(id, sessionTitle)
   if (window.innerWidth <= 900) {
     isOpen.value = false
   }
@@ -103,7 +103,7 @@ onMounted(loadSessions)
         <template v-else>
           <button v-for="session in sessions" :key="session.id" type="button" class="history-item"
             :class="{ active: chat.currentSessionId === session.id }"
-            :title="session.title || '未命名对话'" @click="selectSession(session.id)">
+            :title="session.title || '未命名对话'" @click="selectSession(session.id, session.title)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round" aria-hidden="true">
               <path d="M21 15a2 2 0 0 1-2 2H8l-4 3V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />

@@ -5,10 +5,12 @@ export const useChatStore = defineStore('chat', () => {
     const sessions = ref([])
     const currentSessionId = ref(null)
     const messages = ref([])
-    const loading = ref(false)
+    const title = ref('启问')
 
-    function selectSession(id) {
+    function selectSession(id, sessionTitle) {
         currentSessionId.value = id
+        const target = sessionTitle || sessions.value.find((session) => session.id === id)?.title
+        title.value = target || '启问'
     }
 
     function addSession(session) {
@@ -19,7 +21,7 @@ export const useChatStore = defineStore('chat', () => {
         sessions,
         currentSessionId,
         messages,
-        loading,
+        title,
         selectSession,
         addSession
     }
