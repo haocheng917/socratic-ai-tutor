@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { renderMarkdown } from '../utils/markdown'
 import { useChatStore } from '../stores/chat'
 import { readError, toErrorMessage } from '../utils/http'
@@ -19,6 +19,10 @@ const inputMessage = ref('')
 const chatBody = ref(null)
 const inputEl = ref(null)
 
+const hasUserText = computed(() => chat.messages.some(
+  (message) => message.role === 'user' && typeof message.content === 'string',
+))
+
 function scrollToBottom() {
   nextTick(() => {
     if (chatBody.value) {
@@ -36,7 +40,7 @@ function resizeInput() {
   const el = inputEl.value
   if (!el) return
   el.style.height = 'auto'
-  el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  el.style.height = `${Math.min(el.scrollHeight, 150)}px`
 }
 
 watch(inputMessage, () => nextTick(resizeInput))
@@ -124,6 +128,7 @@ async function onSend() {
   if (isSending.value) return
   if (!inputMessage.value.trim()) return
   if (!chat.currentSessionId) return
+
   const user_text = inputMessage.value.trim()
   chat.messages.push({ 'role': 'user', 'content': user_text })
   inputMessage.value = ''
@@ -173,13 +178,7 @@ function onEnter(event) {
         <div v-for="(msg, index) in chat.messages" :key="index"
           :class="msg.role === 'user' ? 'message right' : 'message left'">
           <div class="avatar" aria-hidden="true">
-            <template v-if="msg.role === 'user'">你</template>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path
-                d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9.8 9.8 0 0 1-3.2-.6L4 21l1.7-4.5A8 8 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z" />
-              <path d="M9 10.5h6M9 13.5h3.5" />
-            </svg>
+            {{ msg.role === 'user' ? '我' : '问' }}
           </div>
           <div class="bubble" :class="{ 'has-image': Array.isArray(msg.content) }">
             <div v-if="typeof msg.content === 'string'" class="markdown-body" v-html="renderMarkdown(msg.content)">
@@ -192,34 +191,35 @@ function onEnter(event) {
           </div>
         </div>
 
-        <div v-if="isSending" class="message left" role="status" aria-label="AI 正在回复">
-          <div class="avatar" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round">
-              <path
-                d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9.8 9.8 0 0 1-3.2-.6L4 21l1.7-4.5A8 8 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z" />
-              <path d="M9 10.5h6M9 13.5h3.5" />
-            </svg>
-          </div>
+        <div v-if="isSending" class="message left" role="status" aria-label="正在回复">
+          <div class="avatar" aria-hidden="true">问</div>
           <div class="bubble typing-bubble">
             <span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span class="typing-label">AI 正在思考</span>
+            <span class="typing-label">正在想下一步…</span>
           </div>
         </div>
       </div>
 
       <div class="chat-composer">
+        <div v-if="!hasUserText && !isSending" class="next-step-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 18l6-6-6-6"></path>
+          </svg>
+          <span><strong>轮到你了</strong>：在下方写下你的想法，按 Enter 发送。</span>
+        </div>
+
         <div v-if="sendError" class="composer-error">
-          <ErrorNotice title="发送失败" :message="sendError" @dismiss="sendError = ''" />
+          <ErrorNotice title="消息没发出去" :message="sendError" @dismiss="sendError = ''" />
         </div>
 
         <div class="chat-footer">
-          <textarea ref="inputEl" class="chat-input" rows="1" placeholder="说说你的思路，或者问我一个问题…"
+          <textarea ref="inputEl" class="chat-input" rows="1" placeholder="写下你的想法，按 Enter 发送…"
             v-model="inputMessage" aria-label="输入消息" @input="resizeInput"
             @keydown.enter.exact="onEnter"></textarea>
           <button class="chat-send" type="button" aria-label="发送消息"
             :disabled="isSending || !inputMessage.trim()" @click="onSend">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 19V5" />
               <path d="M5 12l7-7 7 7" />
@@ -227,26 +227,11 @@ function onEnter(event) {
           </button>
         </div>
 
-        <div class="chat-composer-hint">
-          <span><kbd>Enter</kbd> 发送 · <kbd>Shift</kbd> + <kbd>Enter</kbd> 换行</span>
-          <span>{{ isSending ? 'AI 正在组织下一步引导…' : 'AI 生成内容仅供学习参考' }}</span>
-        </div>
       </div>
     </template>
 
     <div v-else class="chat-welcome">
-      <div class="welcome-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-          stroke-linejoin="round">
-          <path
-            d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9.8 9.8 0 0 1-3.2-.6L4 21l1.7-4.5A8 8 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z" />
-          <path d="M9 10.5h6M9 13.5h3.5" />
-        </svg>
-      </div>
-
-      <p class="chat-eyebrow">Socratic Learning</p>
-      <h1 class="chat-hint">拍下题目，开始一场提问</h1>
-      <p class="chat-desc">AI 导师不会直接给答案，而是用一步步追问，陪你把思路真正想清楚。</p>
+      <h1 class="welcome-title">把题目照片传上来</h1>
 
       <label class="upload-card" :class="{ busy: isSending }">
         <input type="file" accept="image/*" :disabled="isSending" @change="onFileSelect">
@@ -259,25 +244,26 @@ function onEnter(event) {
           </svg>
         </span>
         <span class="upload-copy">
-          <span class="upload-card-title">上传题目图片</span>
-          <span class="upload-card-hint">支持 JPG、PNG、WEBP、GIF</span>
+          <span class="upload-card-title">选择题目照片</span>
         </span>
-        <span class="upload-card-arrow" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M5 12h14"></path>
-            <path d="m13 6 6 6-6 6"></path>
-          </svg>
-        </span>
+        <span class="upload-cta" aria-hidden="true">选择图片</span>
       </label>
 
       <p v-if="isSending" class="upload-status">
         <span class="spinner" aria-hidden="true"></span>
-        正在上传图片并生成引导…
+        正在上传，请稍等…
       </p>
 
       <div v-if="uploadError" class="welcome-error">
-        <ErrorNotice title="无法开始对话" :message="uploadError" @dismiss="uploadError = ''" />
+        <ErrorNotice title="没能开始对话" :message="uploadError" @dismiss="uploadError = ''" />
+      </div>
+
+      <div class="welcome-guide">
+        <ol class="guide-list">
+          <li class="guide-item"><span class="guide-num">1</span><span class="guide-copy">上传题目照片</span></li>
+          <li class="guide-item"><span class="guide-num">2</span><span class="guide-copy">我先问你一个问题</span></li>
+          <li class="guide-item"><span class="guide-num">3</span><span class="guide-copy">你在下方回答，我继续追问</span></li>
+        </ol>
       </div>
     </div>
   </div>

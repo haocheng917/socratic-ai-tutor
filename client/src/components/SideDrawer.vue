@@ -47,18 +47,16 @@ onMounted(loadSessions)
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
-              <path
-                d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9.8 9.8 0 0 1-3.2-.6L4 21l1.7-4.5A8 8 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5Z" />
-              <path d="M9 10.5h6M9 13.5h3.5" />
+              <path d="M21 15a2 2 0 0 1-2 2H8l-4 3V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
+              <path d="M8 9h8M8 12.5h5" />
             </svg>
           </span>
           <div class="brand-copy">
-            <strong>AI Tutor</strong>
-            <small>苏格拉底式学习</small>
+            <strong>启问</strong>
           </div>
         </div>
         <button class="close-btn" type="button" aria-label="收起侧栏" @click="isOpen = false">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="m15 18-6-6 6-6"></path>
           </svg>
@@ -76,12 +74,12 @@ onMounted(loadSessions)
         </template>
 
         <div v-else-if="loadError" class="history-error">
-          <ErrorNotice title="无法加载对话" :message="loadError" @dismiss="loadError = ''" />
-          <button class="retry-btn" type="button" @click="loadSessions">重新加载</button>
+          <ErrorNotice title="没能加载对话记录" :message="loadError" @dismiss="loadError = ''" />
+          <button class="retry-btn" type="button" @click="loadSessions">再试一次</button>
         </div>
 
         <p v-else-if="!sessions || !sessions.length" class="history-empty">
-          还没有对话记录<br />上传一道题目，开始第一次思考吧
+          还没有对话。点击「新对话」，上传题目照片开始。
         </p>
 
         <template v-else>
@@ -89,17 +87,12 @@ onMounted(loadSessions)
             :title="session.title || '未命名对话'">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              <path d="M21 15a2 2 0 0 1-2 2H8l-4 3V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
             </svg>
             <span class="history-title">{{ session.title || '未命名对话' }}</span>
           </div>
         </template>
       </div>
-
-      <footer class="drawer-footer">
-        <strong>拍照提问，边问边学</strong>
-        每次只引导一步，让理解真正发生。
-      </footer>
     </div>
   </aside>
 </template>

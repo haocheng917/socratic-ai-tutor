@@ -86,7 +86,7 @@ async function handleRegister() {
 <template>
   <div class="auth-page">
     <main class="auth-card">
-      <section class="auth-brand" aria-label="AI Tutor 介绍">
+      <section class="auth-brand" aria-label="启问介绍">
         <a class="auth-logo" href="/">
           <span class="auth-logo-mark" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -96,40 +96,13 @@ async function handleRegister() {
               <path d="M9 10.5h6M9 13.5h3.5" />
             </svg>
           </span>
-          <span>AI Tutor</span>
+          <span>启问</span>
         </a>
 
         <div class="auth-brand-copy">
-          <p class="auth-eyebrow">Socratic Learning</p>
           <h1 class="auth-tagline">好问题，<br /><em>比答案更重要。</em></h1>
-          <p class="auth-desc">AI 导师用追问带你拆解难题，让理解真正发生。</p>
+          <p class="auth-desc">不直接给答案，用一个个问题带你拆解难题，让理解真正发生。</p>
         </div>
-
-        <ul class="auth-points">
-          <li>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="m3.4 8.3 3 3 6.2-6.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            <span>循序渐进，而不是直接给答案</span>
-          </li>
-          <li>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="m3.4 8.3 3 3 6.2-6.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            <span>支持图片提问与多轮对话</span>
-          </li>
-          <li>
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="m3.4 8.3 3 3 6.2-6.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            <span>学习记录随时可查</span>
-          </li>
-        </ul>
-
-        <p class="auth-brand-foot">© 2026 AI Tutor</p>
       </section>
 
       <section class="auth-panel" aria-label="账号登录与注册">
@@ -215,12 +188,11 @@ async function handleRegister() {
 
 <style scoped>
 .auth-page {
-  --auth-ink: #14211f;
-  --auth-muted: #6b7b78;
-  --auth-line: #e0e8e5;
-  --auth-accent: #0f9b9b;
-  --auth-accent-strong: #0b7376;
-  --auth-blue: #3b8fd6;
+  --auth-ink: #1f2421;
+  --auth-muted: #6a706b;
+  --auth-line: #e5e7e3;
+  --auth-accent: #2f6b57;
+  --auth-accent-strong: #245444;
 
   height: 100dvh;
   min-height: 100dvh;
@@ -232,10 +204,7 @@ async function handleRegister() {
   color-scheme: light;
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background:
-    radial-gradient(900px 520px at 8% 0%, rgba(24, 168, 168, 0.12), transparent 62%),
-    radial-gradient(820px 520px at 100% 100%, rgba(59, 143, 214, 0.1), transparent 58%),
-    #f3f7f6;
+  background: #ffffff;
 }
 
 .auth-card {
@@ -245,12 +214,10 @@ async function handleRegister() {
   width: min(100%, 980px);
   margin: auto;
   overflow: hidden;
-  border: 1px solid rgba(15, 60, 60, 0.07);
-  border-radius: 28px;
+  border: 1px solid var(--auth-line);
+  border-radius: 20px;
   background: #fff;
-  box-shadow:
-    0 30px 80px -40px rgba(10, 55, 60, 0.35),
-    0 8px 24px -18px rgba(10, 55, 60, 0.2);
+  box-shadow: 0 20px 50px -40px rgba(31, 36, 33, 0.4);
   animation: auth-rise 0.5s cubic-bezier(0.22, 0.8, 0.3, 1) both;
 }
 
@@ -263,14 +230,13 @@ async function handleRegister() {
   padding: 42px 44px 32px;
   overflow: hidden;
   color: #fff;
-  background:
-    radial-gradient(120% 90% at 100% 0%, rgba(89, 214, 206, 0.28), transparent 55%),
-    linear-gradient(155deg, #0b3b40 0%, #0d5c62 55%, #127b85 100%);
+  background: #233029;
 }
 
 .auth-brand::before,
 .auth-brand::after {
   content: "";
+  display: none;
   position: absolute;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -314,7 +280,6 @@ async function handleRegister() {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 11px;
   background: rgba(255, 255, 255, 0.11);
-  backdrop-filter: blur(6px);
 }
 
 .auth-logo-mark svg {
@@ -328,14 +293,6 @@ async function handleRegister() {
   margin-top: clamp(48px, 8vh, 84px);
 }
 
-.auth-eyebrow {
-  margin: 0 0 14px;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
 
 .auth-tagline {
   margin: 0;
@@ -346,7 +303,7 @@ async function handleRegister() {
 }
 
 .auth-tagline em {
-  color: #8fe7df;
+  color: #cfe0d5;
   font-style: normal;
 }
 
@@ -358,44 +315,6 @@ async function handleRegister() {
   line-height: 1.75;
 }
 
-.auth-points {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 11px;
-  margin: 32px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.auth-points li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-
-.auth-points svg {
-  flex: none;
-  width: 15px;
-  height: 15px;
-  padding: 2px;
-  border-radius: 50%;
-  background: rgba(143, 231, 223, 0.14);
-  color: #8fe7df;
-}
-
-.auth-brand-foot {
-  position: relative;
-  z-index: 1;
-  margin: auto 0 0;
-  padding-top: 40px;
-  color: rgba(255, 255, 255, 0.38);
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-}
 
 /* ---------- 右侧表单区 ---------- */
 
@@ -427,8 +346,8 @@ async function handleRegister() {
   gap: 4px;
   margin-bottom: 30px;
   padding: 4px;
-  border-radius: 12px;
-  background: #f0f4f3;
+  border-radius: 10px;
+  background: #f3f4f2;
 }
 
 .auth-tabs label {
@@ -458,7 +377,7 @@ async function handleRegister() {
 
 #auth-mode-login:focus-visible~.auth-tabs label[for="auth-mode-login"],
 #auth-mode-register:focus-visible~.auth-tabs label[for="auth-mode-register"] {
-  outline: 2px solid rgba(15, 155, 155, 0.55);
+  outline: 2px solid rgba(47, 107, 87, 0.55);
   outline-offset: 2px;
 }
 
@@ -529,7 +448,7 @@ async function handleRegister() {
   border: 1px solid var(--auth-line);
   border-radius: 12px;
   outline: none;
-  background: #fafcfb;
+  background: #fff;
   color: var(--auth-ink);
   font: inherit;
   font-size: 14px;
@@ -547,12 +466,12 @@ async function handleRegister() {
 .auth-input:focus {
   border-color: var(--auth-accent);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(24, 168, 168, 0.13);
+  box-shadow: 0 0 0 3px rgba(47, 107, 87, 0.14);
 }
 
 .auth-input:-webkit-autofill {
   -webkit-text-fill-color: var(--auth-ink);
-  -webkit-box-shadow: 0 0 0 1000px #fafcfb inset;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
 }
 
 .auth-hint {
@@ -569,8 +488,8 @@ async function handleRegister() {
   border: 0;
   border-radius: 12px;
   color: #fff;
-  background: linear-gradient(135deg, #18a8a8, var(--auth-blue));
-  box-shadow: 0 12px 24px -14px rgba(15, 155, 155, 0.75);
+  background: var(--auth-accent);
+  box-shadow: 0 10px 22px -18px rgba(35, 83, 67, 0.8);
   font: inherit;
   font-size: 14.5px;
   font-weight: 600;
@@ -580,18 +499,18 @@ async function handleRegister() {
 }
 
 .auth-submit:hover {
-  filter: brightness(1.04);
-  box-shadow: 0 14px 28px -14px rgba(15, 155, 155, 0.85);
+  background: var(--auth-accent-strong);
+  box-shadow: 0 12px 24px -18px rgba(35, 83, 67, 0.9);
   transform: translateY(-1px);
 }
 
 .auth-submit:active {
-  filter: brightness(0.98);
+  background: var(--auth-accent-strong);
   transform: translateY(0);
 }
 
 .auth-submit:focus-visible {
-  outline: 3px solid rgba(15, 155, 155, 0.28);
+  outline: 3px solid rgba(47, 107, 87, 0.3);
   outline-offset: 2px;
 }
 
@@ -616,7 +535,7 @@ async function handleRegister() {
 }
 
 .auth-link:hover {
-  color: #0a6668;
+  color: #1c4236;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -635,7 +554,7 @@ async function handleRegister() {
   .auth-card {
     grid-template-columns: 1fr;
     width: min(100%, 540px);
-    border-radius: 24px;
+    border-radius: 18px;
   }
 
   .auth-brand {
@@ -653,9 +572,6 @@ async function handleRegister() {
     margin-top: 30px;
   }
 
-  .auth-eyebrow {
-    margin-bottom: 10px;
-  }
 
   .auth-tagline {
     font-size: 27px;
@@ -665,11 +581,6 @@ async function handleRegister() {
     max-width: 42ch;
     margin-top: 10px;
     font-size: 13px;
-  }
-
-  .auth-points,
-  .auth-brand-foot {
-    display: none;
   }
 
   .auth-panel {
@@ -687,7 +598,7 @@ async function handleRegister() {
   }
 
   .auth-card {
-    border-radius: 20px;
+    border-radius: 16px;
   }
 
   .auth-brand {
@@ -726,10 +637,6 @@ async function handleRegister() {
 
   .auth-tagline {
     font-size: 30px;
-  }
-
-  .auth-points {
-    margin-top: 24px;
   }
 
   .auth-panel {

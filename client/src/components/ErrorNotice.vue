@@ -39,11 +39,10 @@ defineEmits(['dismiss'])
   align-items: flex-start;
   gap: 10px;
   padding: 11px 12px;
-  border: 1px solid #f2cfca;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #fff8f7, #fff3f1);
-  color: #8f3029;
-  box-shadow: 0 6px 18px -14px rgba(180, 65, 54, 0.7);
+  border: 1px solid #ecd7d2;
+  border-radius: 10px;
+  background: #fdf5f3;
+  color: #8c342c;
   animation: error-in 0.22s ease both;
 }
 
@@ -55,8 +54,8 @@ defineEmits(['dismiss'])
   height: 22px;
   margin-top: 1px;
   border-radius: 50%;
-  background: rgba(196, 65, 54, 0.1);
-  color: #c2413a;
+  background: rgba(180, 69, 59, 0.09);
+  color: var(--danger, #b4453b);
 }
 
 .error-notice-icon svg {
@@ -99,12 +98,12 @@ defineEmits(['dismiss'])
 }
 
 .error-notice-close:hover {
-  background: rgba(196, 65, 54, 0.1);
-  color: #8f3029;
+  background: rgba(180, 69, 59, 0.09);
+  color: #7f2f28;
 }
 
 .error-notice-close:focus-visible {
-  outline: 2px solid rgba(196, 65, 54, 0.4);
+  outline: 2px solid rgba(180, 69, 59, 0.4);
   outline-offset: 1px;
 }
 
