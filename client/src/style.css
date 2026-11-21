@@ -182,6 +182,87 @@ label:focus-visible {
   background: var(--surface);
 }
 
+/* ---------- 升级会员按钮（金色） ---------- */
+.vip-entry-btn {
+  position: relative;
+  overflow: hidden;
+  gap: 6px;
+  padding: 0 14px 0 11px;
+  border-color: #ddc07a;
+  background: linear-gradient(135deg, #fffaf0 0%, #f7e7bf 48%, #e9c87c 100%);
+  color: #6d5115;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow:
+    0 1px 2px rgba(138, 100, 20, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.vip-entry-btn::after {
+  content: "";
+  position: absolute;
+  top: -70%;
+  left: -55%;
+  width: 42%;
+  height: 240%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  transform: rotate(22deg);
+  animation: vip-entry-shine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.vip-entry-btn svg {
+  color: #a67c1f;
+}
+
+.vip-entry-btn:hover {
+  border-color: #c9a24e;
+  background: linear-gradient(135deg, #fffdf7 0%, #f9e9c3 48%, #e2bb62 100%);
+  color: #5a4210;
+  transform: translateY(-1px);
+  box-shadow:
+    0 5px 14px -8px rgba(138, 100, 20, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.vip-entry-btn:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 2px rgba(138, 100, 20, 0.16),
+    inset 0 1px 2px rgba(138, 100, 20, 0.12);
+}
+
+.vip-entry-btn:focus-visible {
+  outline-color: rgba(184, 134, 11, 0.45);
+}
+
+.top-bar .vip-entry-btn {
+  margin-left: 2px;
+}
+
+.drawer-content > .vip-entry-btn {
+  justify-content: center;
+  width: 100%;
+  height: 38px;
+  margin: 0 0 18px;
+}
+
+@keyframes vip-entry-shine {
+  0%,
+  68% {
+    transform: translateX(0) rotate(22deg);
+  }
+
+  100% {
+    transform: translateX(430%) rotate(22deg);
+  }
+}
+
 /* 移动端侧栏遮罩 */
 .drawer-backdrop {
   display: none;
@@ -1046,14 +1127,21 @@ label:focus-visible {
     font-size: 15px;
   }
 
-  .new-btn {
+  .top-bar .new-btn:not(.vip-entry-btn) {
     width: 36px;
     padding: 0;
     justify-content: center;
   }
 
-  .new-btn span {
+  .top-bar .new-btn:not(.vip-entry-btn) span {
     display: none;
+  }
+
+  .top-bar .vip-entry-btn {
+    flex: none;
+    gap: 4px;
+    padding: 0 10px 0 8px;
+    font-size: 12px;
   }
 
   .chat {

@@ -9,6 +9,7 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL
 const isOpen = defineModel()
 const sessions = defineModel('sessions')
 const props = defineProps(['token'])
+const emit = defineEmits(['openVipPage'])
 const chat = useChatStore()
 
 function selectSession(id) {
@@ -71,6 +72,14 @@ onMounted(loadSessions)
           </svg>
         </button>
       </header>
+
+      <button class="new-btn vip-entry-btn" type="button" @click="emit('openVipPage')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 18h16M5 8l4 3 3-5 3 5 4-3-2 8H7L5 8Z" />
+        </svg>
+        <span>升级会员</span>
+      </button>
 
       <div class="drawer-section-head">
         <span>历史对话</span>
