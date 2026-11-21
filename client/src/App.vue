@@ -3,7 +3,9 @@ import Chat from './components/Chat.vue'
 import SideDrawer from './components/SideDrawer.vue'
 import AuthPage from './components/AuthPage.vue'
 import { ref } from 'vue'
+import { useChatStore } from './stores/chat'
 
+const chat = useChatStore()
 const token = ref(localStorage.getItem('token') || '')
 const isDrawerOpen = ref(window.innerWidth > 900)
 const sessions = ref([])
@@ -15,7 +17,8 @@ function onLogin(accessToken) {
 }
 
 function startNewChat() {
-  sessions.value = []
+  chat.currentSessionId = null
+  chat.messages = []
   chatKey.value += 1
 }
 

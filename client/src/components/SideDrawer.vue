@@ -3,11 +3,20 @@
 import { onMounted, ref } from 'vue'
 import ErrorNotice from './ErrorNotice.vue'
 import { readError, toErrorMessage } from '../utils/http'
+import { useChatStore } from '../stores/chat.js'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL
 const isOpen = defineModel()
 const sessions = defineModel('sessions')
 const props = defineProps(['token'])
+const chat = useChatStore()
+
+function selectSession(id) {
+  chat.selectSession(id)
+  if (window.innerWidth <= 900) {
+    isOpen.value = false
+  }
+}
 
 const isLoading = ref(true)
 const loadError = ref('')
@@ -83,14 +92,15 @@ onMounted(loadSessions)
         </p>
 
         <template v-else>
-          <div v-for="session in sessions" :key="session.id" class="history-item"
-            :title="session.title || '未命名对话'">
+          <button v-for="session in sessions" :key="session.id" type="button" class="history-item"
+            :class="{ active: chat.currentSessionId === session.id }"
+            :title="session.title || '未命名对话'" @click="selectSession(session.id)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round" aria-hidden="true">
               <path d="M21 15a2 2 0 0 1-2 2H8l-4 3V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
             </svg>
             <span class="history-title">{{ session.title || '未命名对话' }}</span>
-          </div>
+          </button>
         </template>
       </div>
     </div>

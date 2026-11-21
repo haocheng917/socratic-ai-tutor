@@ -311,13 +311,16 @@ label:focus-visible {
   margin-bottom: 2px;
   border: 1px solid transparent;
   border-radius: 8px;
+  background: transparent;
   color: var(--ink-soft);
+  font: inherit;
   font-size: 13px;
   line-height: 1.5;
   text-align: left;
 }
 
-.history-item:hover {
+.history-item:hover,
+.history-item.active {
   background: var(--accent-soft);
   color: var(--accent-strong);
 }
@@ -337,6 +340,26 @@ label:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.history-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.history-load-error {
+  margin-bottom: 6px;
+}
+
+.history-retry {
+  width: auto;
+  padding: 0 14px;
+  margin-top: 8px;
 }
 
 .history-empty {

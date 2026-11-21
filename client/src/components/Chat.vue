@@ -15,9 +15,82 @@ const appSessions = defineModel()
 const isSending = ref(false)
 const uploadError = ref('')
 const sendError = ref('')
+const historyError = ref('')
+const isLoadingHistory = ref(false)
 const inputMessage = ref('')
 const chatBody = ref(null)
 const inputEl = ref(null)
+
+// 新建会话时跳过历史加载，切换历史会话时才拉取
+let skipNextLoad = false
+let historyRequest = 0
+
+async function loadMessage() {
+  const sessionId = chat.currentSessionId
+  if (!sessionId) {
+    chat.messages = []
+    return
+  }
+
+  const requestId = ++historyRequest
+  isLoadingHistory.value = true
+  historyError.value = ''
+
+  try {
+    const res = await fetch(`${baseUrl}/tutor/history/${sessionId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${props.token}`
+      },
+    })
+
+    if (!res.ok) {
+      throw new Error(await readError(res, '加载对话失败'))
+    }
+
+    const data = await res.json()
+    if (requestId !== historyRequest) return
+    if (!Array.isArray(data?.messages)) {
+      throw new Error('加载对话失败：服务端返回格式不正确')
+    }
+
+    // 历史中包含 system 提示词，界面只展示用户和助手的消息
+    chat.messages = data.messages.filter(
+      (message) => message.role === 'user' || message.role === 'assistant',
+    )
+    scrollToBottom()
+  } catch (error) {
+    if (requestId !== historyRequest) return
+    console.error(error)
+    chat.messages = []
+    historyError.value = toErrorMessage(error, '加载对话失败，请重试')
+  } finally {
+    if (requestId === historyRequest) {
+      isLoadingHistory.value = false
+    }
+  }
+}
+
+watch(
+  () => chat.currentSessionId,
+  (newId, oldId) => {
+    if (newId === oldId) return
+
+    if (skipNextLoad) {
+      skipNextLoad = false
+      return
+    }
+
+    historyRequest += 1
+    isLoadingHistory.value = false
+    historyError.value = ''
+    chat.messages = []
+
+    if (newId) {
+      loadMessage()
+    }
+  },
+)
 
 const hasUserText = computed(() => chat.messages.some(
   (message) => message.role === 'user' && typeof message.content === 'string',
@@ -110,6 +183,8 @@ async function onFileSelect(event) {
     }
 
     const data = await res.json()
+    skipNextLoad = true
+    historyError.value = ''
     chat.currentSessionId = data.id
     chat.messages.push({ 'role': 'assistant', 'content': data.content })
     if (appSessions.value) {
@@ -125,10 +200,11 @@ async function onFileSelect(event) {
 }
 
 async function onSend() {
-  if (isSending.value) return
+  if (isSending.value || isLoadingHistory.value) return
   if (!inputMessage.value.trim()) return
   if (!chat.currentSessionId) return
 
+  const sessionId = chat.currentSessionId
   const user_text = inputMessage.value.trim()
   chat.messages.push({ 'role': 'user', 'content': user_text })
   inputMessage.value = ''
@@ -145,7 +221,7 @@ async function onSend() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${props.token}`
       },
-      body: JSON.stringify({ 'session_id': chat.currentSessionId, 'content': user_text })
+      body: JSON.stringify({ 'session_id': sessionId, 'content': user_text })
     })
 
     if (!res.ok) {
@@ -153,8 +229,9 @@ async function onSend() {
     }
 
     const data = await res.json()
-    chat.currentSessionId = data.id
-    chat.messages.push({ 'role': 'assistant', 'content': data.content })
+    if (chat.currentSessionId === sessionId) {
+      chat.messages.push({ 'role': 'assistant', 'content': data.content })
+    }
   } catch (error) {
     console.error('发送失败：', error)
     sendError.value = toErrorMessage(error, '发送失败，请稍后重试')
@@ -175,6 +252,14 @@ function onEnter(event) {
   <div class="chat">
     <template v-if="chat.currentSessionId !== null">
       <div ref="chatBody" class="chat-body" aria-live="polite">
+        <div v-if="isLoadingHistory" class="history-loading">
+          <span class="spinner" aria-hidden="true"></span>
+          正在加载对话…
+        </div>
+        <div v-else-if="historyError" class="history-load-error">
+          <ErrorNotice title="没能加载这段对话" :message="historyError" :dismissible="false" />
+          <button class="retry-btn history-retry" type="button" @click="loadMessage">再试一次</button>
+        </div>
         <div v-for="(msg, index) in chat.messages" :key="index"
           :class="msg.role === 'user' ? 'message right' : 'message left'">
           <div class="avatar" aria-hidden="true">
@@ -201,7 +286,7 @@ function onEnter(event) {
       </div>
 
       <div class="chat-composer">
-        <div v-if="!hasUserText && !isSending" class="next-step-hint">
+        <div v-if="!hasUserText && !isSending && !isLoadingHistory && !historyError" class="next-step-hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round" aria-hidden="true">
             <path d="M9 18l6-6-6-6"></path>
@@ -214,11 +299,11 @@ function onEnter(event) {
         </div>
 
         <div class="chat-footer">
-          <textarea ref="inputEl" class="chat-input" rows="1" placeholder="写下你的想法，按 Enter 发送…"
-            v-model="inputMessage" aria-label="输入消息" @input="resizeInput"
+          <textarea ref="inputEl" class="chat-input" rows="1" placeholder="写下你的想法，按 Enter 发送…" v-model="inputMessage"
+            aria-label="输入消息" :disabled="isLoadingHistory" @input="resizeInput"
             @keydown.enter.exact="onEnter"></textarea>
-          <button class="chat-send" type="button" aria-label="发送消息"
-            :disabled="isSending || !inputMessage.trim()" @click="onSend">
+          <button class="chat-send" type="button" aria-label="发送消息" :disabled="isSending || isLoadingHistory || !inputMessage.trim()"
+            @click="onSend">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 19V5" />
