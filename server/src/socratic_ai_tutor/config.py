@@ -7,7 +7,7 @@ API_KEY = os.getenv('API_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
 SECRET_KEY = 'abcdefgtestkey'
 
-if not OSS_REGION or not OSS_BUCKET:
+if not OSS_REGION or not OSS_BUCKET or not DATABASE_URL:
     print("致命错误：缺少 OSS_REGION 或 OSS_BUCKET 环境变量，请检查 .env 文件！")
     sys.exit(1)
 
