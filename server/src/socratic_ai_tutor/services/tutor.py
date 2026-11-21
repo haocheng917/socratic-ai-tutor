@@ -54,7 +54,7 @@ async def chat(session_id: int, user: User, user_text, db: AsyncSession):
     elif session.user_id != user.id:
         raise HTTPException(status_code=403, detail="无权访问该对话")
 
-    messages = session.messages
+    messages = list(session.messages)
     messages.append({"role": "user", "content": user_text})
 
     response = await client.chat.completions.create(
@@ -69,7 +69,7 @@ async def chat(session_id: int, user: User, user_text, db: AsyncSession):
     messages.append({"role": "assistant", "content": content})
     print(response.usage)
 
-    await TutorRepository.update_messages(db, session_id, messages)
+    await TutorRepository.update_messages(db, session, messages)
 
     return {"id": session_id, "content": content}
 
