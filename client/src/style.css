@@ -740,12 +740,41 @@ label:focus-visible {
   font-weight: 600;
 }
 
-.next-step-hint svg {
+.next-step-hint>svg {
   flex: none;
   width: 15px;
   height: 15px;
   margin-top: 1px;
   color: var(--accent-strong);
+}
+
+.next-step-hint>span {
+  flex: 1;
+}
+
+.next-step-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: -2px -4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.next-step-close:hover {
+  background: rgba(47, 107, 87, 0.1);
+  color: var(--accent-strong);
+}
+
+.next-step-close svg {
+  width: 13px;
+  height: 13px;
 }
 
 .composer-error {

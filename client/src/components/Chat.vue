@@ -16,6 +16,7 @@ const isSending = ref(false)
 const uploadError = ref('')
 const sendError = ref('')
 const historyError = ref('')
+const showNextStepHint = ref(true)
 const isLoadingHistory = ref(false)
 const inputMessage = ref('')
 const chatBody = ref(null)
@@ -286,12 +287,19 @@ function onEnter(event) {
       </div>
 
       <div class="chat-composer">
-        <div v-if="!hasUserText && !isSending && !isLoadingHistory && !historyError" class="next-step-hint">
+        <div v-if="showNextStepHint && !hasUserText && !isSending && !isLoadingHistory && !historyError"
+          class="next-step-hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round" aria-hidden="true">
             <path d="M9 18l6-6-6-6"></path>
           </svg>
           <span><strong>轮到你了</strong>：在下方写下你的想法，按 Enter 发送。</span>
+          <button class="next-step-close" type="button" aria-label="关闭提示" @click="showNextStepHint = false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18"></path>
+            </svg>
+          </button>
         </div>
 
         <div v-if="sendError" class="composer-error">
