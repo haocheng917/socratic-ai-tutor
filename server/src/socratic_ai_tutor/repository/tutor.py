@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 class TutorRepository:
     @staticmethod
-    async def create_session(db: AsyncSession, user_id: int, messages: list):
-        tutor_session = TutorSession(messages=messages, user_id=user_id)
+    async def create_session(db: AsyncSession, title: str, user_id: int, messages: list):
+        tutor_session = TutorSession(messages=messages, title=title, user_id=user_id)
         db.add(tutor_session)
         await db.flush()
         await db.commit()

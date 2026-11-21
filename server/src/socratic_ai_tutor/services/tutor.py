@@ -32,12 +32,16 @@ async def start(content, user_id: int, db: AsyncSession):
         messages=cast(list[ChatCompletionMessageParam],
                       resolve_messages_urls(messages)),
         reasoning_effort="high",
-        extra_body={"thinking": {"type": "enabled"}},
+        extra_body={
+            "thinking": {"type": "enabled"},
+            "title": {"enabled": True}
+        },
     )
 
+    title = response.choices[0].message.model_dump().get("title") or "新会话"
     content = response.choices[0].message.content
     messages.append({"role": "assistant", "content": content})
-    session_id = await TutorRepository.create_session(db, user_id, messages)
+    session_id = await TutorRepository.create_session(db, title, user_id, messages)
     print(response.usage)
 
     return {"id": session_id, "content": content}
