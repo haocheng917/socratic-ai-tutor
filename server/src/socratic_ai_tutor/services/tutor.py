@@ -43,8 +43,14 @@ async def start(content, user_id: int, db: AsyncSession):
     return {"id": session_id, "content": content}
 
 
-async def chat(session_id: int, user_text, db: AsyncSession):
-    messages = await TutorRepository.get_messages(db, session_id)
+async def chat(session_id: int, user: User, user_text, db: AsyncSession):
+    session = await TutorRepository.get_session(db, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    elif session.user_id != user.id:
+        raise HTTPException(status_code=403, detail="无权访问该对话")
+
+    messages = session.messages
     messages.append({"role": "user", "content": user_text})
 
     response = await client.chat.completions.create(
@@ -64,11 +70,13 @@ async def chat(session_id: int, user_text, db: AsyncSession):
     return {"id": session_id, "content": content}
 
 
-async def get_history(session_id: int, db: AsyncSession):
-    messages = await TutorRepository.get_messages(db, session_id)
-    if messages == []:
+async def get_history(session_id: int, user: User, db: AsyncSession):
+    session = await TutorRepository.get_session(db, session_id)
+    if session is None:
         raise HTTPException(status_code=404, detail="会话不存在")
-    return messages
+    elif session.user_id != user.id:
+        raise HTTPException(status_code=403, detail="无权访问该对话")
+    return resolve_messages_urls(session.messages)
 
 
 async def get_sessions(user: User):

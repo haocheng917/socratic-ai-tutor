@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from ..models import TutorSession
+from ..models import TutorSession, User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -14,11 +14,8 @@ class TutorRepository:
         return tutor_session.id
 
     @staticmethod
-    async def get_messages(db: AsyncSession, id: int):
-        result = await db.scalar(select(TutorSession).where(TutorSession.id == id))
-        if result is None:
-            return []
-        return result.messages
+    async def get_session(db: AsyncSession, id: int):
+        return await db.scalar(select(TutorSession).where(TutorSession.id == id))
 
     @staticmethod
     async def update_messages(db: AsyncSession, id: int, messages: list):

@@ -1,6 +1,4 @@
-import os
-
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from socratic_ai_tutor.core.security import get_current_user
@@ -23,17 +21,15 @@ async def start(req: StartRequest, db: AsyncSession = Depends(get_db),
 @router.post('/chat')
 async def chat(req: ChatRequest, db: AsyncSession = Depends(get_db),
                user: User = Depends(get_current_user)):
-    return await tutor.chat(req.session_id, req.content, db)
+    return await tutor.chat(req.session_id, user, req.content, db)
 
-router.get("/history/{session_id}")
-
-
+@router.get("/history/{session_id}")
 async def get_history(
     session_id: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    messages = await tutor.get_history(session_id, db)
+    messages = await tutor.get_history(session_id, user, db)
 
     return {"session_id": session_id, "messages": messages}
 
