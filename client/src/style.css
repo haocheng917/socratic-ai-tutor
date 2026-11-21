@@ -950,7 +950,6 @@ label:focus-visible {
     width: 272px;
     height: 100dvh;
     border-right: 1px solid var(--line);
-    box-shadow: 20px 0 40px -28px rgba(35, 40, 36, 0.45);
     transform: translateX(-102%);
     transition: transform 0.28s ease;
   }
