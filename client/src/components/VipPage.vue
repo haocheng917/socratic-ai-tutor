@@ -1,10 +1,124 @@
 <!--
-  会员中心页（纯 UI：template + css + close 事件声明，无会员/支付逻辑）
+  会员中心页
+  - 套餐：免费档由前端内置，付费档来自 GET /membership/plans
+  - 仅 UI 与套餐加载，不含下单/支付逻辑
   - 点击「返回」会向父组件派发 close 事件：<VipPage @close="..." />
 -->
 
 <script setup>
+import { onMounted, ref } from 'vue'
+import ErrorNotice from './ErrorNotice.vue'
+import { readError, toErrorMessage } from '../utils/http'
+
 defineEmits(['close'])
+
+const baseUrl = import.meta.env.VITE_API_BASE_URL
+
+const plans = ref([])
+const isLoading = ref(true)
+const loadError = ref('')
+
+/* 免费档由前端提供，付费档来自 GET /membership/plans */
+const FREE_PLAN = {
+  code: 'free',
+  name: '轻享版',
+  desc: '偶尔来问，够用就好',
+  price: 0,
+  period: '/ 永久',
+  badge: '',
+  tag: '',
+  features: ['每日 20 次提问', '基础题目拆解与追问'],
+  cta: '免费开始',
+  recommended: false,
+}
+
+/* 后端套餐名是 Plus / Pro，这里补上页面展示用的文案 */
+const PLAN_META = {
+  plus: {
+    name: '进阶版',
+    desc: '高频学习者的日常选择',
+    badge: '最受欢迎',
+    cta: '选择进阶版',
+    recommended: true,
+  },
+  pro: {
+    name: '尊享版',
+    desc: '为长期目标配一位学习搭档',
+    tag: '长期备考',
+    cta: '选择尊享版',
+    recommended: false,
+  },
+}
+
+function formatPrice(value) {
+  const cents = Number(value)
+  if (!Number.isFinite(cents)) return '--'
+  const yuan = cents / 100
+  if (Number.isInteger(yuan)) return String(yuan)
+  return yuan.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')
+}
+
+function formatPeriod(days) {
+  const n = Number(days)
+  if (!Number.isFinite(n) || n <= 0) return '/ 永久'
+  if (n === 30) return '/ 月'
+  if (n === 365) return '/ 年'
+  return `/ ${n} 天`
+}
+
+function normalizePlan(plan, index) {
+  const code = plan?.code || `plan-${index}`
+  const meta = PLAN_META[code] || {}
+  const durationDays = Number(plan?.duration_days)
+  const recommended = meta.recommended ?? index === 0
+  const name = meta.name || plan?.name || code
+
+  return {
+    code,
+    name,
+    desc: meta.desc || (durationDays > 0 ? `有效期 ${durationDays} 天` : ''),
+    badge: meta.badge || (recommended ? '最受欢迎' : ''),
+    tag: meta.tag || '',
+    price: Number(plan?.price) || 0,
+    period: formatPeriod(durationDays),
+    features: Array.isArray(plan?.describe) ? plan.describe.filter(Boolean) : [],
+    cta: meta.cta || `选择${name}`,
+    recommended,
+  }
+}
+
+function normalizePlans(data) {
+  const list = Array.isArray(data) ? data : Array.isArray(data?.plans) ? data.plans : []
+  const paidPlans = list
+    .filter((plan) => plan && plan.code && plan.code !== 'free')
+    .sort((a, b) => Number(a.price) - Number(b.price))
+    .map(normalizePlan)
+
+  return [FREE_PLAN, ...paidPlans]
+}
+
+async function getPlans() {
+  isLoading.value = true
+  loadError.value = ''
+
+  try {
+    const res = await fetch(`${baseUrl}/membership/plans`, {
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) {
+      throw new Error(await readError(res, '加载会员方案失败'))
+    }
+    plans.value = normalizePlans(await res.json())
+  } catch (error) {
+    console.error(error)
+    plans.value = []
+    loadError.value = toErrorMessage(error, '加载会员方案失败')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(getPlans)
 </script>
 
 <template>
@@ -39,78 +153,51 @@ defineEmits(['close'])
         <h1 id="vip-title" class="vip-title">升级成启问会员</h1>
       </section>
 
-      <section class="vip-plans" aria-label="会员方案">
-        <!-- 轻享版 -->
-        <article class="vip-plan">
-          <header class="plan-head">
-            <div class="plan-title-row">
-              <h2 class="plan-name">轻享版</h2>
-            </div>
-            <p class="plan-desc">偶尔来问，够用就好</p>
-          </header>
+      <section class="vip-plans" aria-label="会员方案" :aria-busy="isLoading">
+        <template v-if="isLoading">
+          <div v-for="n in 3" :key="`skeleton-${n}`" class="vip-plan vip-plan--skeleton" aria-hidden="true">
+            <span class="skeleton-line skeleton-line--title"></span>
+            <span class="skeleton-line skeleton-line--desc"></span>
+            <span class="skeleton-line skeleton-line--price"></span>
+            <span class="skeleton-line"></span>
+            <span class="skeleton-line"></span>
+            <span class="skeleton-line skeleton-line--short"></span>
+            <span class="skeleton-line skeleton-line--button"></span>
+          </div>
+        </template>
 
-          <p class="plan-price">
-            <span class="plan-currency">¥</span>
-            <span class="plan-amount">0</span>
-            <span class="plan-period">/ 永久</span>
-          </p>
+        <div v-else-if="loadError" class="vip-plans-state">
+          <ErrorNotice title="没能加载会员方案" :message="loadError" :dismissible="false" />
+          <button class="vip-state-retry" type="button" @click="getPlans">再试一次</button>
+        </div>
 
-          <ul class="plan-features">
-            <li>每日 20 次提问</li>
-            <li>基础题目拆解与追问</li>
-          </ul>
+        <template v-else>
+          <article v-for="plan in plans" :key="plan.code" class="vip-plan"
+            :class="{ 'vip-plan--pro': plan.recommended }">
+            <header class="plan-head">
+              <div class="plan-title-row">
+                <h2 class="plan-name">{{ plan.name }}</h2>
+                <span v-if="plan.badge" class="plan-badge">{{ plan.badge }}</span>
+                <span v-else-if="plan.tag" class="plan-tag">{{ plan.tag }}</span>
+              </div>
+              <p v-if="plan.desc" class="plan-desc">{{ plan.desc }}</p>
+            </header>
 
-          <button class="plan-btn" type="button">免费开始</button>
-        </article>
+            <p class="plan-price">
+              <span class="plan-currency">¥</span>
+              <span class="plan-amount">{{ formatPrice(plan.price) }}</span>
+              <span class="plan-period">{{ plan.period }}</span>
+            </p>
 
-        <!-- 进阶版（推荐） -->
-        <article class="vip-plan vip-plan--pro">
-          <header class="plan-head">
-            <div class="plan-title-row">
-              <h2 class="plan-name">进阶版</h2>
-              <span class="plan-badge">最受欢迎</span>
-            </div>
-            <p class="plan-desc">高频学习者的日常选择</p>
-          </header>
+            <ul class="plan-features">
+              <li v-for="feature in plan.features" :key="feature">{{ feature }}</li>
+            </ul>
 
-          <p class="plan-price">
-            <span class="plan-currency">¥</span>
-            <span class="plan-amount">29</span>
-            <span class="plan-period">/ 月</span>
-          </p>
-
-          <ul class="plan-features">
-            <li>每日 200 次提问</li>
-            <li>优先响应，减少等待</li>
-            <li>无限期保存对话记录</li>
-          </ul>
-
-          <button class="plan-btn plan-btn--primary" type="button">选择进阶版</button>
-        </article>
-
-        <!-- 尊享版 -->
-        <article class="vip-plan vip-plan--max">
-          <header class="plan-head">
-            <div class="plan-title-row">
-              <h2 class="plan-name">尊享版</h2>
-            </div>
-            <p class="plan-desc">为长期目标配一位学习搭档</p>
-          </header>
-
-          <p class="plan-price">
-            <span class="plan-currency">¥</span>
-            <span class="plan-amount">69</span>
-            <span class="plan-period">/ 月</span>
-          </p>
-
-          <ul class="plan-features">
-            <li>无限次提问</li>
-            <li>多设备同步与对话导出</li>
-            <li>每月一次学习顾问沟通</li>
-          </ul>
-
-          <button class="plan-btn" type="button">选择尊享版</button>
-        </article>
+            <button class="plan-btn" :class="{ 'plan-btn--primary': plan.recommended }" type="button">
+              {{ plan.cta }}
+            </button>
+          </article>
+        </template>
       </section>
 
       <p class="vip-footnote">
@@ -250,6 +337,16 @@ defineEmits(['close'])
     opacity: 1;
     translate: 0 0;
     scale: 1;
+  }
+}
+
+@keyframes vip-plan-skeleton {
+  from {
+    background-position: 100% 50%;
+  }
+
+  to {
+    background-position: 0 50%;
   }
 }
 
@@ -435,6 +532,90 @@ defineEmits(['close'])
 .vip-plan--pro:hover {
   border-color: var(--vip-accent);
   box-shadow: 0 24px 46px -32px rgba(47, 107, 87, 0.55);
+}
+
+/* ---------- 加载 / 错误状态 ---------- */
+
+.vip-plan--skeleton {
+  gap: 12px;
+  min-height: 280px;
+  pointer-events: none;
+}
+
+.vip-plan--skeleton:hover {
+  transform: none;
+  border-color: var(--vip-line);
+  box-shadow: 0 1px 2px rgba(35, 40, 36, 0.04);
+}
+
+.skeleton-line {
+  display: block;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f1f3ef 25%, #e7eae4 37%, #f1f3ef 63%);
+  background-size: 400% 100%;
+  animation: vip-plan-skeleton 1.4s ease infinite;
+}
+
+.skeleton-line--title {
+  width: 42%;
+  height: 18px;
+}
+
+.skeleton-line--desc {
+  width: 64%;
+}
+
+.skeleton-line--price {
+  width: 36%;
+  height: 34px;
+  margin: 6px 0 4px;
+}
+
+.skeleton-line--short {
+  width: 74%;
+}
+
+.skeleton-line--button {
+  width: 100%;
+  height: 40px;
+  margin-top: auto;
+}
+
+.vip-plans-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--vip-line);
+  border-radius: 16px;
+  background: #fbfcfa;
+}
+
+.vip-plans-state .error-notice {
+  width: min(100%, 520px);
+}
+
+.vip-state-retry {
+  height: 38px;
+  padding: 0 18px;
+  border: 1px solid var(--vip-line-strong);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--vip-ink-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.vip-state-retry:hover {
+  border-color: var(--vip-accent);
+  background: var(--vip-accent-soft);
+  color: var(--vip-accent-strong);
 }
 
 .plan-head {
