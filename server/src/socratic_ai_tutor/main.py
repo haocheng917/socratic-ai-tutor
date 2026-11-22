@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from socratic_ai_tutor.api import auth
+from socratic_ai_tutor.api import auth, membership
 from .database import engine
 from .models import Base
 from .api import tutor, upload
@@ -28,7 +28,7 @@ app.add_middleware(
 app.include_router(tutor.router)
 app.include_router(upload.router)
 app.include_router(auth.router)
-
+app.include_router(membership.router)
 
 @app.get('/')
 def root():
