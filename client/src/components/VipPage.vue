@@ -27,7 +27,8 @@ const FREE_PLAN = {
   period: '/ 永久',
   badge: '',
   tag: '',
-  features: ['每日 20 次提问', '基础题目拆解与追问'],
+  tone: 'sage',
+  features: ['仅有 20 次提问', '基础题目拆解与追问'],
   cta: '免费开始',
   recommended: false,
 }
@@ -37,14 +38,15 @@ const PLAN_META = {
   plus: {
     name: '进阶版',
     desc: '高频学习者的日常选择',
-    badge: '最受欢迎',
+    tone: 'green',
     cta: '选择进阶版',
-    recommended: true,
+    recommended: false,
   },
   pro: {
     name: '尊享版',
     desc: '为长期目标配一位学习搭档',
     tag: '长期备考',
+    tone: 'gold',
     cta: '选择尊享版',
     recommended: false,
   },
@@ -70,7 +72,7 @@ function normalizePlan(plan, index) {
   const code = plan?.code || `plan-${index}`
   const meta = PLAN_META[code] || {}
   const durationDays = Number(plan?.duration_days)
-  const recommended = meta.recommended ?? index === 0
+  const recommended = meta.recommended === true
   const name = meta.name || plan?.name || code
 
   return {
@@ -79,6 +81,7 @@ function normalizePlan(plan, index) {
     desc: meta.desc || (durationDays > 0 ? `有效期 ${durationDays} 天` : ''),
     badge: meta.badge || (recommended ? '最受欢迎' : ''),
     tag: meta.tag || '',
+    tone: meta.tone || 'sage',
     price: Number(plan?.price) || 0,
     period: formatPeriod(durationDays),
     features: Array.isArray(plan?.describe) ? plan.describe.filter(Boolean) : [],
@@ -173,7 +176,7 @@ onMounted(getPlans)
 
         <template v-else>
           <article v-for="plan in plans" :key="plan.code" class="vip-plan"
-            :class="{ 'vip-plan--pro': plan.recommended }">
+            :class="[`vip-plan--${plan.tone}`, { 'vip-plan--pro': plan.recommended }]">
             <header class="plan-head">
               <div class="plan-title-row">
                 <h2 class="plan-name">{{ plan.name }}</h2>
@@ -504,13 +507,18 @@ onMounted(getPlans)
 }
 
 .vip-plan {
+  --plan-accent: #6f8779;
+  --plan-soft: #f2f6f3;
+  --plan-tint: #fbfcfa;
+  --plan-line: #e2eae4;
+
   position: relative;
   display: flex;
   flex-direction: column;
   padding: clamp(20px, 2vw, 24px);
-  border: 1px solid var(--vip-line);
+  border: 1px solid var(--plan-line);
   border-radius: 16px;
-  background: #fff;
+  background: linear-gradient(180deg, var(--plan-tint) 0%, #fff 44%);
   box-shadow: 0 1px 2px rgba(35, 40, 36, 0.04);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -519,6 +527,27 @@ onMounted(getPlans)
   transform: translateY(-2px);
   border-color: var(--vip-line-strong);
   box-shadow: 0 22px 42px -34px rgba(31, 36, 33, 0.32);
+}
+
+.vip-plan--sage {
+  --plan-accent: #6f8779;
+  --plan-soft: #f1f6f3;
+  --plan-tint: #fafcfa;
+  --plan-line: #e2eae4;
+}
+
+.vip-plan--green {
+  --plan-accent: #40745f;
+  --plan-soft: #edf4f0;
+  --plan-tint: #f8fbf9;
+  --plan-line: #dce9e2;
+}
+
+.vip-plan--gold {
+  --plan-accent: #9d7a2a;
+  --plan-soft: #faf3e2;
+  --plan-tint: #fdfaf2;
+  --plan-line: #eee1c4;
 }
 
 .vip-plan--pro {
@@ -657,9 +686,9 @@ onMounted(getPlans)
 }
 
 .plan-tag {
-  border: 1px solid var(--vip-line);
-  background: #f8f9f7;
-  color: var(--vip-muted);
+  border: 1px solid var(--plan-line);
+  background: var(--plan-soft);
+  color: var(--plan-accent);
 }
 
 .plan-desc {
@@ -737,8 +766,8 @@ onMounted(getPlans)
   height: 16px;
   margin-top: 1px;
   border-radius: 50%;
-  background: var(--vip-accent-soft);
-  color: var(--vip-accent);
+  background: var(--plan-soft);
+  color: var(--plan-accent);
   font-size: 9.5px;
   font-weight: 700;
   line-height: 1;
@@ -765,9 +794,9 @@ onMounted(getPlans)
 }
 
 .plan-btn:hover {
-  border-color: var(--vip-accent);
-  background: var(--vip-accent-soft);
-  color: var(--vip-accent-strong);
+  border-color: var(--plan-accent);
+  background: var(--plan-soft);
+  color: var(--plan-accent);
 }
 
 .vip-plan--pro .plan-btn--primary {

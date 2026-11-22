@@ -188,8 +188,8 @@ label:focus-visible {
   overflow: hidden;
   gap: 6px;
   padding: 0 14px 0 11px;
-  border-color: #ddc07a;
-  background: linear-gradient(135deg, #fffaf0 0%, #f7e7bf 48%, #e9c87c 100%);
+  border-color: #e7d2a2;
+  background: linear-gradient(135deg, #fffaf0 0%, #f7e7bf 48%, #e7d2a2 100%);
   color: #6d5115;
   font-weight: 600;
   white-space: nowrap;
