@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from socratic_ai_tutor.core.security import get_current_user
 from socratic_ai_tutor.database import get_db
-from socratic_ai_tutor.schema.auth import UserLogin, UserRegister
+from socratic_ai_tutor.models import User
+from socratic_ai_tutor.schema.auth import UserLogin, UserMe, UserRegister
 from ..services import auth
 
 
@@ -26,3 +28,8 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
         return {"access_token": token}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get('/me', response_model=UserMe)
+async def get_me(user: User = Depends(get_current_user)):
+    return user

@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserRegister(BaseModel):
@@ -11,3 +13,13 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class UserMe(BaseModel):
+    id: int
+    username: str
+    credits: int
+    membership_plan: str
+    membership_expire_at: datetime | None
+
+    model_config = ConfigDict(from_attributes=True)
