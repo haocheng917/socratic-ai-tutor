@@ -183,7 +183,7 @@ label:focus-visible {
 }
 
 /* ---------- 升级会员按钮（金色） ---------- */
-.vip-entry-btn {
+.membership-entry-btn {
   position: relative;
   overflow: hidden;
   gap: 6px;
@@ -203,7 +203,7 @@ label:focus-visible {
     box-shadow 0.18s ease;
 }
 
-.vip-entry-btn::after {
+.membership-entry-btn::after {
   content: "";
   position: absolute;
   top: -70%;
@@ -212,15 +212,15 @@ label:focus-visible {
   height: 240%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
   transform: rotate(22deg);
-  animation: vip-entry-shine 5s ease-in-out infinite;
+  animation: membership-entry-shine 5s ease-in-out infinite;
   pointer-events: none;
 }
 
-.vip-entry-btn svg {
+.membership-entry-btn svg {
   color: #a67c1f;
 }
 
-.vip-entry-btn:hover {
+.membership-entry-btn:hover {
   border-color: #c9a24e;
   background: linear-gradient(135deg, #fffdf7 0%, #f9e9c3 48%, #e2bb62 100%);
   color: #5a4210;
@@ -230,29 +230,29 @@ label:focus-visible {
     inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-.vip-entry-btn:active {
+.membership-entry-btn:active {
   transform: translateY(0);
   box-shadow:
     0 1px 2px rgba(138, 100, 20, 0.16),
     inset 0 1px 2px rgba(138, 100, 20, 0.12);
 }
 
-.vip-entry-btn:focus-visible {
+.membership-entry-btn:focus-visible {
   outline-color: rgba(184, 134, 11, 0.45);
 }
 
-.top-bar .vip-entry-btn {
+.top-bar .membership-entry-btn {
   margin-left: 2px;
 }
 
-.drawer-content > .vip-entry-btn {
+.drawer-content > .membership-entry-btn {
   justify-content: center;
   width: 100%;
   height: 38px;
   margin: 0 0 18px;
 }
 
-@keyframes vip-entry-shine {
+@keyframes membership-entry-shine {
   0%,
   68% {
     transform: translateX(0) rotate(22deg);
@@ -1127,17 +1127,17 @@ label:focus-visible {
     font-size: 15px;
   }
 
-  .top-bar .new-btn:not(.vip-entry-btn) {
+  .top-bar .new-btn:not(.membership-entry-btn) {
     width: 36px;
     padding: 0;
     justify-content: center;
   }
 
-  .top-bar .new-btn:not(.vip-entry-btn) span {
+  .top-bar .new-btn:not(.membership-entry-btn) span {
     display: none;
   }
 
-  .top-bar .vip-entry-btn {
+  .top-bar .membership-entry-btn {
     flex: none;
     gap: 4px;
     padding: 0 10px 0 8px;

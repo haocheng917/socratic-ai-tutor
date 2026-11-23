@@ -7,13 +7,13 @@ import { useChatStore } from '../stores/chat.js'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL
 const isOpen = defineModel()
-const sessions = defineModel('sessions')
+const conversations = defineModel('conversations')
 const props = defineProps(['token'])
-const emit = defineEmits(['openVipPage'])
+const emit = defineEmits(['openMembershipPage'])
 const chat = useChatStore()
 
-function selectSession(id, sessionTitle) {
-  chat.selectSession(id, sessionTitle)
+function selectConversation(id, conversationTitle) {
+  chat.selectConversation(id, conversationTitle)
   if (window.innerWidth <= 900) {
     isOpen.value = false
   }
@@ -22,11 +22,11 @@ function selectSession(id, sessionTitle) {
 const isLoading = ref(true)
 const loadError = ref('')
 
-async function loadSessions() {
+async function loadConversations() {
   isLoading.value = true
   loadError.value = ''
   try {
-    const res = await fetch(`${baseUrl}/tutor/sessions`, {
+    const res = await fetch(`${baseUrl}/tutor/conversations`, {
       method: 'get',
       headers: {
         'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ async function loadSessions() {
       throw new Error(await readError(res, '加载对话列表失败'))
     }
     const data = await res.json()
-    sessions.value = Array.isArray(data?.sessions) ? data.sessions : []
+    conversations.value = Array.isArray(data?.conversations) ? data.conversations : []
   } catch (err) {
     console.error(err)
     loadError.value = toErrorMessage(err, '加载对话列表失败')
@@ -46,7 +46,7 @@ async function loadSessions() {
   }
 }
 
-onMounted(loadSessions)
+onMounted(loadConversations)
 </script>
 
 <template>
@@ -73,7 +73,7 @@ onMounted(loadSessions)
         </button>
       </header>
 
-      <button class="new-btn vip-entry-btn" type="button" @click="emit('openVipPage')">
+      <button class="new-btn membership-entry-btn" type="button" @click="emit('openMembershipPage')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
           <path d="M4 18h16M5 8l4 3 3-5 3 5 4-3-2 8H7L5 8Z" />
@@ -83,7 +83,7 @@ onMounted(loadSessions)
 
       <div class="drawer-section-head">
         <span>历史对话</span>
-        <span v-if="sessions && sessions.length" class="history-count">{{ sessions.length }}</span>
+        <span v-if="conversations && conversations.length" class="history-count">{{ conversations.length }}</span>
       </div>
 
       <div class="history-list">
@@ -93,22 +93,22 @@ onMounted(loadSessions)
 
         <div v-else-if="loadError" class="history-error">
           <ErrorNotice title="没能加载对话记录" :message="loadError" @dismiss="loadError = ''" />
-          <button class="retry-btn" type="button" @click="loadSessions">再试一次</button>
+          <button class="retry-btn" type="button" @click="loadConversations">再试一次</button>
         </div>
 
-        <p v-else-if="!sessions || !sessions.length" class="history-empty">
+        <p v-else-if="!conversations || !conversations.length" class="history-empty">
           还没有对话。点击「新对话」，上传题目照片开始。
         </p>
 
         <template v-else>
-          <button v-for="session in sessions" :key="session.id" type="button" class="history-item"
-            :class="{ active: chat.currentSessionId === session.id }"
-            :title="session.title || '未命名对话'" @click="selectSession(session.id, session.title)">
+          <button v-for="conversation in conversations" :key="conversation.id" type="button" class="history-item"
+            :class="{ active: chat.currentConversationId === conversation.id }" :title="conversation.title || '未命名对话'"
+            @click="selectConversation(conversation.id, conversation.title)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round" aria-hidden="true">
               <path d="M21 15a2 2 0 0 1-2 2H8l-4 3V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z" />
             </svg>
-            <span class="history-title">{{ session.title || '未命名对话' }}</span>
+            <span class="history-title">{{ conversation.title || '未命名对话' }}</span>
           </button>
         </template>
       </div>

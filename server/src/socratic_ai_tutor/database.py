@@ -5,9 +5,9 @@ from .config import DATABASE_URL
 
 engine = create_async_engine(DATABASE_URL, echo=True, pool_pre_ping=True)
 
-async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
+async_conversation_factory = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_factory() as session:
-        yield session
+    async with async_conversation_factory() as conversation:
+        yield conversation

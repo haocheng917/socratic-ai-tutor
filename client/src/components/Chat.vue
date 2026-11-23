@@ -10,7 +10,7 @@ const baseUrl = import.meta.env.VITE_API_BASE_URL
 const chat = useChatStore()
 
 const props = defineProps(['token'])
-const appSessions = defineModel()
+const appConversations = defineModel()
 
 const isSending = ref(false)
 const uploadError = ref('')
@@ -27,8 +27,8 @@ let skipNextLoad = false
 let historyRequest = 0
 
 async function loadMessage() {
-  const sessionId = chat.currentSessionId
-  if (!sessionId) {
+  const conversationId = chat.currentConversationId
+  if (!conversationId) {
     chat.messages = []
     return
   }
@@ -38,7 +38,7 @@ async function loadMessage() {
   historyError.value = ''
 
   try {
-    const res = await fetch(`${baseUrl}/tutor/history/${sessionId}`, {
+    const res = await fetch(`${baseUrl}/tutor/history/${conversationId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${props.token}`
@@ -73,7 +73,7 @@ async function loadMessage() {
 }
 
 watch(
-  () => chat.currentSessionId,
+  () => chat.currentConversationId,
   (newId, oldId) => {
     if (newId === oldId) return
 
@@ -186,10 +186,10 @@ async function onFileSelect(event) {
     const data = await res.json()
     skipNextLoad = true
     historyError.value = ''
-    chat.currentSessionId = data.id
+    chat.currentConversationId = data.id
     chat.messages.push({ 'role': 'assistant', 'content': data.content })
-    if (appSessions.value) {
-      appSessions.value.push({ 'title': '新对话', 'id': chat.currentSessionId })
+    if (appConversations.value) {
+      appConversations.value.push({ 'title': '新对话', 'id': chat.currentConversationId })
     }
   } catch (error) {
     console.error(error)
@@ -203,9 +203,9 @@ async function onFileSelect(event) {
 async function onSend() {
   if (isSending.value || isLoadingHistory.value) return
   if (!inputMessage.value.trim()) return
-  if (!chat.currentSessionId) return
+  if (!chat.currentConversationId) return
 
-  const sessionId = chat.currentSessionId
+  const conversationId = chat.currentConversationId
   const user_text = inputMessage.value.trim()
   chat.messages.push({ 'role': 'user', 'content': user_text })
   inputMessage.value = ''
@@ -222,7 +222,7 @@ async function onSend() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${props.token}`
       },
-      body: JSON.stringify({ 'session_id': sessionId, 'content': user_text })
+      body: JSON.stringify({ 'conversation_id': conversationId, 'content': user_text })
     })
 
     if (!res.ok) {
@@ -230,7 +230,7 @@ async function onSend() {
     }
 
     const data = await res.json()
-    if (chat.currentSessionId === sessionId) {
+    if (chat.currentConversationId === conversationId) {
       chat.messages.push({ 'role': 'assistant', 'content': data.content })
     }
   } catch (error) {
@@ -251,7 +251,7 @@ function onEnter(event) {
 
 <template>
   <div class="chat">
-    <template v-if="chat.currentSessionId !== null">
+    <template v-if="chat.currentConversationId !== null">
       <div ref="chatBody" class="chat-body" aria-live="polite">
         <div v-if="isLoadingHistory" class="history-loading">
           <span class="spinner" aria-hidden="true"></span>
@@ -310,8 +310,8 @@ function onEnter(event) {
           <textarea ref="inputEl" class="chat-input" rows="1" placeholder="写下你的想法，按 Enter 发送…" v-model="inputMessage"
             aria-label="输入消息" :disabled="isLoadingHistory" @input="resizeInput"
             @keydown.enter.exact="onEnter"></textarea>
-          <button class="chat-send" type="button" aria-label="发送消息" :disabled="isSending || isLoadingHistory || !inputMessage.trim()"
-            @click="onSend">
+          <button class="chat-send" type="button" aria-label="发送消息"
+            :disabled="isSending || isLoadingHistory || !inputMessage.trim()" @click="onSend">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 19V5" />

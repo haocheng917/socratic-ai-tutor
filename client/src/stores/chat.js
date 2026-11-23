@@ -2,27 +2,27 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useChatStore = defineStore('chat', () => {
-    const sessions = ref([])
-    const currentSessionId = ref(null)
+    const conversations = ref([])
+    const currentConversationId = ref(null)
     const messages = ref([])
     const title = ref('启问')
 
-    function selectSession(id, sessionTitle) {
-        currentSessionId.value = id
-        const target = sessionTitle || sessions.value.find((session) => session.id === id)?.title
+    function selectConversation(id, conversationTitle) {
+        currentConversationId.value = id
+        const target = conversationTitle || conversations.value.find((conversation) => conversation.id === id)?.title
         title.value = target || '启问'
     }
 
-    function addSession(session) {
-        sessions.value.push(session)
+    function addConversation(conversation) {
+        conversations.value.push(conversation)
     }
 
     return {
-        sessions,
-        currentSessionId,
+        conversations,
+        currentConversationId,
         messages,
         title,
-        selectSession,
-        addSession
+        selectConversation,
+        addConversation
     }
 })

@@ -4,19 +4,20 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
 
+
 class Base(DeclarativeBase):
     pass
 
 
-class TutorSession(Base):
-    __tablename__ = "tutor_sessions"
+class TutorConversation(Base):
+    __tablename__ = "tutor_conversations"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String)
     messages: Mapped[list] = mapped_column(JSONB, default=list)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False)
 
-    user: Mapped["User"] = relationship(back_populates="sessions")
+    user: Mapped["User"] = relationship(back_populates="conversations")
 
 
 class User(Base):
@@ -38,7 +39,7 @@ class User(Base):
         nullable=True
     )
 
-    sessions: Mapped[list["TutorSession"]] = relationship(
+    conversations: Mapped[list["TutorConversation"]] = relationship(
         back_populates="user"
     )
     orders: Mapped[list["Order"]] = relationship(

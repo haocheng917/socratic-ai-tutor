@@ -41,20 +41,20 @@ async def start(content, user_id: int, db: AsyncSession):
     title = response.choices[0].message.model_dump().get("title") or "新会话"
     content = response.choices[0].message.content
     messages.append({"role": "assistant", "content": content})
-    session_id = await TutorRepository.create_session(db, title, user_id, messages)
+    conversation_id = await TutorRepository.create_conversation(db, title, user_id, messages)
     print(response.usage)
 
-    return {"id": session_id, "content": content}
+    return {"id": conversation_id, "content": content}
 
 
-async def chat(session_id: int, user: User, user_text, db: AsyncSession):
-    session = await TutorRepository.get_session(db, session_id)
-    if session is None:
+async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
+    conversation = await TutorRepository.get_conversation(db, conversation_id)
+    if conversation is None:
         raise HTTPException(status_code=404, detail="会话不存在")
-    elif session.user_id != user.id:
+    elif conversation.user_id != user.id:
         raise HTTPException(status_code=403, detail="无权访问该对话")
 
-    messages = list(session.messages)
+    messages = list(conversation.messages)
     messages.append({"role": "user", "content": user_text})
 
     response = await client.chat.completions.create(
@@ -69,22 +69,22 @@ async def chat(session_id: int, user: User, user_text, db: AsyncSession):
     messages.append({"role": "assistant", "content": content})
     print(response.usage)
 
-    await TutorRepository.update_messages(db, session, messages)
+    await TutorRepository.update_messages(db, conversation, messages)
 
-    return {"id": session_id, "content": content}
+    return {"id": conversation_id, "content": content}
 
 
-async def get_history(session_id: int, user: User, db: AsyncSession):
-    session = await TutorRepository.get_session(db, session_id)
-    if session is None:
+async def get_history(conversation_id: int, user: User, db: AsyncSession):
+    conversation = await TutorRepository.get_conversation(db, conversation_id)
+    if conversation is None:
         raise HTTPException(status_code=404, detail="会话不存在")
-    elif session.user_id != user.id:
+    elif conversation.user_id != user.id:
         raise HTTPException(status_code=403, detail="无权访问该对话")
-    return resolve_messages_urls(session.messages)
+    return resolve_messages_urls(conversation.messages)
 
 
-async def get_sessions(user: User):
+async def get_conversations(user: User):
     res = []
-    for session in user.sessions:
-        res.append({'id': session.id, 'title': session.title})
+    for conversation in user.conversations:
+        res.append({'id': conversation.id, 'title': conversation.title})
     return res

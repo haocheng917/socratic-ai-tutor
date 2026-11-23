@@ -9,5 +9,5 @@ class StartRequest(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    session_id: int
+    conversation_id: int
     content: Union[str, List[ChatCompletionContentPartParam]]

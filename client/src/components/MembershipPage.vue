@@ -2,13 +2,13 @@
   会员中心页
   - 套餐：免费档由前端内置，付费档来自 GET /membership/plans
   - 仅 UI 与套餐加载，不含下单/支付逻辑
-  - 点击「返回」会向父组件派发 close 事件：<VipPage @close="..." />
+  - 点击「返回」会向父组件派发 close 事件：<MembershipPage @close="..." />
 -->
 
 <script setup>
 import { onMounted, ref } from 'vue'
 import ErrorNotice from './ErrorNotice.vue'
-import { readError, toErrorMessage } from '../utils/http'
+import { readError, toErrorMessage } from '../utils/http.js'
 
 defineEmits(['close'])
 
@@ -125,10 +125,10 @@ onMounted(getPlans)
 </script>
 
 <template>
-  <div class="vip-page">
-    <header class="vip-nav">
-      <a class="vip-brand" href="/" aria-label="启问首页">
-        <span class="vip-brand-mark" aria-hidden="true">
+  <div class="membership-page">
+    <header class="membership-nav">
+      <a class="membership-brand" href="/" aria-label="启问首页">
+        <span class="membership-brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
             stroke-linejoin="round">
             <path
@@ -139,10 +139,10 @@ onMounted(getPlans)
         <span>启问</span>
       </a>
 
-      <span class="vip-nav-divider" aria-hidden="true"></span>
-      <span class="vip-nav-label">会员中心</span>
+      <span class="membership-nav-divider" aria-hidden="true"></span>
+      <span class="membership-nav-label">会员中心</span>
 
-      <button class="vip-back" type="button" aria-label="返回对话" @click="$emit('close')">
+      <button class="membership-back" type="button" aria-label="返回对话" @click="$emit('close')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
           <path d="m15 18-6-6 6-6" />
@@ -151,14 +151,15 @@ onMounted(getPlans)
       </button>
     </header>
 
-    <main class="vip-main">
-      <section class="vip-hero" aria-labelledby="vip-title">
-        <h1 id="vip-title" class="vip-title">升级成启问会员</h1>
+    <main class="membership-main">
+      <section class="membership-hero" aria-labelledby="membership-title">
+        <h1 id="membership-title" class="membership-title">升级成启问会员</h1>
       </section>
 
-      <section class="vip-plans" aria-label="会员方案" :aria-busy="isLoading">
+      <section class="membership-plans" aria-label="会员方案" :aria-busy="isLoading">
         <template v-if="isLoading">
-          <div v-for="n in 3" :key="`skeleton-${n}`" class="vip-plan vip-plan--skeleton" aria-hidden="true">
+          <div v-for="n in 3" :key="`skeleton-${n}`" class="membership-plan membership-plan--skeleton"
+            aria-hidden="true">
             <span class="skeleton-line skeleton-line--title"></span>
             <span class="skeleton-line skeleton-line--desc"></span>
             <span class="skeleton-line skeleton-line--price"></span>
@@ -169,14 +170,14 @@ onMounted(getPlans)
           </div>
         </template>
 
-        <div v-else-if="loadError" class="vip-plans-state">
+        <div v-else-if="loadError" class="membership-plans-state">
           <ErrorNotice title="没能加载会员方案" :message="loadError" :dismissible="false" />
-          <button class="vip-state-retry" type="button" @click="getPlans">再试一次</button>
+          <button class="membership-state-retry" type="button" @click="getPlans">再试一次</button>
         </div>
 
         <template v-else>
-          <article v-for="plan in plans" :key="plan.code" class="vip-plan"
-            :class="[`vip-plan--${plan.tone}`, { 'vip-plan--pro': plan.recommended }]">
+          <article v-for="plan in plans" :key="plan.code" class="membership-plan"
+            :class="[`membership-plan--${plan.tone}`, { 'membership-plan--pro': plan.recommended }]">
             <header class="plan-head">
               <div class="plan-title-row">
                 <h2 class="plan-name">{{ plan.name }}</h2>
@@ -203,7 +204,7 @@ onMounted(getPlans)
         </template>
       </section>
 
-      <p class="vip-footnote">
+      <p class="membership-footnote">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
           <path d="M12 3 5 6v5c0 4.4 3 8.4 7 10 4-1.6 7-5.6 7-10V6l-7-3Z" />
@@ -216,24 +217,24 @@ onMounted(getPlans)
 </template>
 
 <style scoped>
-.vip-page {
-  --vip-ink: #1f2421;
-  --vip-ink-soft: #3a403c;
-  --vip-muted: #6a706b;
-  --vip-muted-soft: #8d938e;
-  --vip-line: #e5e7e3;
-  --vip-line-strong: #d4d7d1;
-  --vip-accent: #2f6b57;
-  --vip-accent-strong: #245444;
-  --vip-accent-soft: #edf3f0;
-  --vip-paper: #ffffff;
+.membership-page {
+  --membership-ink: #1f2421;
+  --membership-ink-soft: #3a403c;
+  --membership-muted: #6a706b;
+  --membership-muted-soft: #8d938e;
+  --membership-line: #e5e7e3;
+  --membership-line-strong: #d4d7d1;
+  --membership-accent: #2f6b57;
+  --membership-accent-strong: #245444;
+  --membership-accent-soft: #edf3f0;
+  --membership-paper: #ffffff;
 
   height: 100dvh;
   min-height: 100dvh;
   width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  color: var(--vip-ink);
+  color: var(--membership-ink);
   color-scheme: light;
   font-family: "Inter", "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui,
     -apple-system, sans-serif;
@@ -241,63 +242,63 @@ onMounted(getPlans)
   text-rendering: optimizeLegibility;
   background:
     radial-gradient(920px 420px at 50% -180px, #e8f1eb 0%, rgba(232, 241, 235, 0) 72%),
-    var(--vip-paper);
+    var(--membership-paper);
   scrollbar-width: thin;
   scrollbar-color: #d8d3c7 transparent;
 }
 
-.vip-page::-webkit-scrollbar {
+.membership-page::-webkit-scrollbar {
   width: 8px;
 }
 
-.vip-page::-webkit-scrollbar-thumb {
+.membership-page::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
   border-radius: 999px;
   background: #d8d3c7;
   background-clip: content-box;
 }
 
-.vip-page *,
-.vip-page *::before,
-.vip-page *::after {
+.membership-page *,
+.membership-page *::before,
+.membership-page *::after {
   box-sizing: border-box;
 }
 
 /* ---------- 进入动画 ---------- */
 
-.vip-page {
-  animation: vip-page-fade 0.24s ease-out both;
+.membership-page {
+  animation: membership-page-fade 0.24s ease-out both;
 }
 
-.vip-nav {
-  animation: vip-nav-fade 0.3s ease-out both;
+.membership-nav {
+  animation: membership-nav-fade 0.3s ease-out both;
 }
 
-.vip-hero {
-  animation: vip-rise 0.42s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+.membership-hero {
+  animation: membership-rise 0.42s cubic-bezier(0.22, 0.8, 0.3, 1) both;
 }
 
-.vip-plan {
-  animation: vip-plan-pop 0.46s cubic-bezier(0.22, 0.8, 0.3, 1) both;
+.membership-plan {
+  animation: membership-plan-pop 0.46s cubic-bezier(0.22, 0.8, 0.3, 1) both;
 }
 
-.vip-plan:nth-child(1) {
+.membership-plan:nth-child(1) {
   animation-delay: 0.06s;
 }
 
-.vip-plan:nth-child(2) {
+.membership-plan:nth-child(2) {
   animation-delay: 0.13s;
 }
 
-.vip-plan:nth-child(3) {
+.membership-plan:nth-child(3) {
   animation-delay: 0.2s;
 }
 
-.vip-footnote {
-  animation: vip-rise 0.4s ease-out 0.3s both;
+.membership-footnote {
+  animation: membership-rise 0.4s ease-out 0.3s both;
 }
 
-@keyframes vip-page-fade {
+@keyframes membership-page-fade {
   from {
     opacity: 0;
   }
@@ -307,7 +308,7 @@ onMounted(getPlans)
   }
 }
 
-@keyframes vip-nav-fade {
+@keyframes membership-nav-fade {
   from {
     opacity: 0;
   }
@@ -317,7 +318,7 @@ onMounted(getPlans)
   }
 }
 
-@keyframes vip-rise {
+@keyframes membership-rise {
   from {
     opacity: 0;
     translate: 0 10px;
@@ -329,7 +330,7 @@ onMounted(getPlans)
   }
 }
 
-@keyframes vip-plan-pop {
+@keyframes membership-plan-pop {
   from {
     opacity: 0;
     translate: 0 14px;
@@ -343,7 +344,7 @@ onMounted(getPlans)
   }
 }
 
-@keyframes vip-plan-skeleton {
+@keyframes membership-plan-skeleton {
   from {
     background-position: 100% 50%;
   }
@@ -356,7 +357,7 @@ onMounted(getPlans)
 
 /* ---------- 顶部导航 ---------- */
 
-.vip-nav {
+.membership-nav {
   position: sticky;
   top: 0;
   z-index: 20;
@@ -371,57 +372,57 @@ onMounted(getPlans)
   -webkit-backdrop-filter: blur(14px);
 }
 
-.vip-brand {
+.membership-brand {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: var(--vip-ink);
+  color: var(--membership-ink);
   font-size: 14.5px;
   font-weight: 600;
   letter-spacing: 0.01em;
   text-decoration: none;
 }
 
-.vip-brand-mark {
+.membership-brand-mark {
   display: grid;
   place-items: center;
   width: 30px;
   height: 30px;
   border: 1px solid #d3e4da;
   border-radius: 8px;
-  background: var(--vip-accent-soft);
-  color: var(--vip-accent-strong);
+  background: var(--membership-accent-soft);
+  color: var(--membership-accent-strong);
 }
 
-.vip-brand-mark svg {
+.membership-brand-mark svg {
   width: 18px;
   height: 18px;
 }
 
-.vip-nav-divider {
+.membership-nav-divider {
   width: 1px;
   height: 16px;
-  background: var(--vip-line-strong);
+  background: var(--membership-line-strong);
 }
 
-.vip-nav-label {
+.membership-nav-label {
   margin-right: auto;
-  color: var(--vip-muted);
+  color: var(--membership-muted);
   font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0.02em;
 }
 
-.vip-back {
+.membership-back {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   height: 34px;
   padding: 0 12px 0 9px;
-  border: 1px solid var(--vip-line);
+  border: 1px solid var(--membership-line);
   border-radius: 9px;
   background: #fff;
-  color: var(--vip-ink-soft);
+  color: var(--membership-ink-soft);
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -429,32 +430,32 @@ onMounted(getPlans)
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
-.vip-back svg {
+.membership-back svg {
   width: 16px;
   height: 16px;
 }
 
-.vip-back:hover {
-  border-color: var(--vip-accent);
-  background: var(--vip-accent-soft);
-  color: var(--vip-accent-strong);
+.membership-back:hover {
+  border-color: var(--membership-accent);
+  background: var(--membership-accent-soft);
+  color: var(--membership-accent-strong);
 }
 
 /* ---------- 页面主体 ---------- */
 
-.vip-main {
+.membership-main {
   width: min(100%, 1080px);
   margin: 0 auto;
   padding: clamp(20px, 3.6vw, 32px) clamp(20px, 4vw, 32px) 24px;
 }
 
-.vip-hero {
+.membership-hero {
   max-width: 680px;
   margin: 0 auto clamp(20px, 2.8vw, 30px);
   text-align: center;
 }
 
-.vip-eyebrow {
+.membership-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -462,20 +463,20 @@ onMounted(getPlans)
   border: 1px solid #d9e5de;
   border-radius: 999px;
   background: rgba(237, 243, 240, 0.8);
-  color: var(--vip-accent-strong);
+  color: var(--membership-accent-strong);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
-.vip-eyebrow svg {
+.membership-eyebrow svg {
   width: 12px;
   height: 12px;
 }
 
-.vip-title {
+.membership-title {
   margin: 12px 0 8px;
-  color: var(--vip-ink);
+  color: var(--membership-ink);
   font-size: clamp(27px, 3.4vw, 40px);
   font-weight: 650;
   letter-spacing: -0.03em;
@@ -483,15 +484,15 @@ onMounted(getPlans)
   text-wrap: balance;
 }
 
-.vip-title em {
-  color: var(--vip-accent);
+.membership-title em {
+  color: var(--membership-accent);
   font-style: normal;
 }
 
-.vip-subtitle {
+.membership-subtitle {
   max-width: 540px;
   margin: 0 auto;
-  color: var(--vip-muted);
+  color: var(--membership-muted);
   font-size: clamp(13px, 1.3vw, 14.5px);
   line-height: 1.65;
   text-wrap: balance;
@@ -499,14 +500,14 @@ onMounted(getPlans)
 
 /* ---------- 三档方案 ---------- */
 
-.vip-plans {
+.membership-plans {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(12px, 1.6vw, 18px);
   align-items: stretch;
 }
 
-.vip-plan {
+.membership-plan {
   --plan-accent: #6f8779;
   --plan-soft: #f2f6f3;
   --plan-tint: #fbfcfa;
@@ -523,34 +524,34 @@ onMounted(getPlans)
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.vip-plan:hover {
+.membership-plan:hover {
   transform: translateY(-2px);
-  border-color: var(--vip-line-strong);
+  border-color: var(--membership-line-strong);
   box-shadow: 0 22px 42px -34px rgba(31, 36, 33, 0.32);
 }
 
-.vip-plan--sage {
+.membership-plan--sage {
   --plan-accent: #6f8779;
   --plan-soft: #f1f6f3;
   --plan-tint: #fafcfa;
   --plan-line: #e2eae4;
 }
 
-.vip-plan--green {
+.membership-plan--green {
   --plan-accent: #40745f;
   --plan-soft: #edf4f0;
   --plan-tint: #f8fbf9;
   --plan-line: #dce9e2;
 }
 
-.vip-plan--gold {
+.membership-plan--gold {
   --plan-accent: #9d7a2a;
   --plan-soft: #faf3e2;
   --plan-tint: #fdfaf2;
   --plan-line: #eee1c4;
 }
 
-.vip-plan--pro {
+.membership-plan--pro {
   border-color: #bcd6c8;
   background:
     radial-gradient(120% 90% at 100% 0%, rgba(47, 107, 87, 0.1) 0%, rgba(47, 107, 87, 0) 58%),
@@ -558,22 +559,22 @@ onMounted(getPlans)
   box-shadow: 0 18px 38px -32px rgba(47, 107, 87, 0.5);
 }
 
-.vip-plan--pro:hover {
-  border-color: var(--vip-accent);
+.membership-plan--pro:hover {
+  border-color: var(--membership-accent);
   box-shadow: 0 24px 46px -32px rgba(47, 107, 87, 0.55);
 }
 
 /* ---------- 加载 / 错误状态 ---------- */
 
-.vip-plan--skeleton {
+.membership-plan--skeleton {
   gap: 12px;
   min-height: 280px;
   pointer-events: none;
 }
 
-.vip-plan--skeleton:hover {
+.membership-plan--skeleton:hover {
   transform: none;
-  border-color: var(--vip-line);
+  border-color: var(--membership-line);
   box-shadow: 0 1px 2px rgba(35, 40, 36, 0.04);
 }
 
@@ -583,7 +584,7 @@ onMounted(getPlans)
   border-radius: 6px;
   background: linear-gradient(90deg, #f1f3ef 25%, #e7eae4 37%, #f1f3ef 63%);
   background-size: 400% 100%;
-  animation: vip-plan-skeleton 1.4s ease infinite;
+  animation: membership-plan-skeleton 1.4s ease infinite;
 }
 
 .skeleton-line--title {
@@ -611,29 +612,29 @@ onMounted(getPlans)
   margin-top: auto;
 }
 
-.vip-plans-state {
+.membership-plans-state {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
   padding: 24px;
-  border: 1px solid var(--vip-line);
+  border: 1px solid var(--membership-line);
   border-radius: 16px;
   background: #fbfcfa;
 }
 
-.vip-plans-state .error-notice {
+.membership-plans-state .error-notice {
   width: min(100%, 520px);
 }
 
-.vip-state-retry {
+.membership-state-retry {
   height: 38px;
   padding: 0 18px;
-  border: 1px solid var(--vip-line-strong);
+  border: 1px solid var(--membership-line-strong);
   border-radius: 9px;
   background: #fff;
-  color: var(--vip-ink-soft);
+  color: var(--membership-ink-soft);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -641,10 +642,10 @@ onMounted(getPlans)
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
-.vip-state-retry:hover {
-  border-color: var(--vip-accent);
-  background: var(--vip-accent-soft);
-  color: var(--vip-accent-strong);
+.membership-state-retry:hover {
+  border-color: var(--membership-accent);
+  background: var(--membership-accent-soft);
+  color: var(--membership-accent-strong);
 }
 
 .plan-head {
@@ -660,7 +661,7 @@ onMounted(getPlans)
 
 .plan-name {
   margin: 0;
-  color: var(--vip-ink);
+  color: var(--membership-ink);
   font-size: 17.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -693,7 +694,7 @@ onMounted(getPlans)
 
 .plan-desc {
   margin: 4px 0 0;
-  color: var(--vip-muted);
+  color: var(--membership-muted);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -703,7 +704,7 @@ onMounted(getPlans)
   align-items: baseline;
   gap: 2px;
   margin: 16px 0 0;
-  color: var(--vip-ink);
+  color: var(--membership-ink);
   line-height: 1;
 }
 
@@ -720,14 +721,14 @@ onMounted(getPlans)
 
 .plan-period {
   margin-left: 4px;
-  color: var(--vip-muted-soft);
+  color: var(--membership-muted-soft);
   font-size: 12px;
   font-weight: 500;
 }
 
 .plan-note {
   margin: 7px 0 0;
-  color: var(--vip-muted-soft);
+  color: var(--membership-muted-soft);
   font-size: 11.5px;
   line-height: 1.5;
 }
@@ -739,11 +740,11 @@ onMounted(getPlans)
   gap: 8px;
   margin: 16px 0 18px;
   padding: 14px 0 0;
-  border-top: 1px solid var(--vip-line);
+  border-top: 1px solid var(--membership-line);
   list-style: none;
 }
 
-.vip-plan--pro .plan-features {
+.membership-plan--pro .plan-features {
   border-top-color: rgba(47, 107, 87, 0.16);
 }
 
@@ -752,7 +753,7 @@ onMounted(getPlans)
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  color: var(--vip-ink-soft);
+  color: var(--membership-ink-soft);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -773,19 +774,19 @@ onMounted(getPlans)
   line-height: 1;
 }
 
-.vip-plan--pro .plan-features li::before {
+.membership-plan--pro .plan-features li::before {
   background: #e0eee6;
-  color: var(--vip-accent-strong);
+  color: var(--membership-accent-strong);
 }
 
 .plan-btn {
   width: 100%;
   height: 40px;
   margin-top: auto;
-  border: 1px solid var(--vip-line-strong);
+  border: 1px solid var(--membership-line-strong);
   border-radius: 10px;
   background: #fff;
-  color: var(--vip-ink);
+  color: var(--membership-ink);
   font: inherit;
   font-size: 13.5px;
   font-weight: 600;
@@ -799,33 +800,33 @@ onMounted(getPlans)
   color: var(--plan-accent);
 }
 
-.vip-plan--pro .plan-btn--primary {
+.membership-plan--pro .plan-btn--primary {
   border-color: #bcd6c8;
   background: #dcebe2;
-  color: var(--vip-accent-strong);
+  color: var(--membership-accent-strong);
 }
 
-.vip-plan--pro .plan-btn--primary:hover {
-  border-color: var(--vip-accent);
+.membership-plan--pro .plan-btn--primary:hover {
+  border-color: var(--membership-accent);
   background: #cfe3d8;
   color: #1d4536;
 }
 
 /* ---------- 页脚说明 ---------- */
 
-.vip-footnote {
+.membership-footnote {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   margin: 18px 0 0;
-  color: var(--vip-muted-soft);
+  color: var(--membership-muted-soft);
   font-size: 11.5px;
   line-height: 1.6;
   text-align: center;
 }
 
-.vip-footnote svg {
+.membership-footnote svg {
   flex: none;
   width: 14px;
   height: 14px;
@@ -834,31 +835,31 @@ onMounted(getPlans)
 /* ---------- 平板 / 手机 ---------- */
 
 @media (max-width: 900px) {
-  .vip-nav {
+  .membership-nav {
     height: 52px;
   }
 
-  .vip-main {
+  .membership-main {
     padding-top: 22px;
     padding-bottom: 26px;
   }
 
-  .vip-hero {
+  .membership-hero {
     margin-bottom: 18px;
   }
 
-  .vip-plans {
+  .membership-plans {
     grid-template-columns: minmax(0, 1fr);
     max-width: 500px;
     margin: 0 auto;
     gap: 12px;
   }
 
-  .vip-plan {
+  .membership-plan {
     padding: 20px;
   }
 
-  .vip-plan:hover {
+  .membership-plan:hover {
     transform: none;
   }
 
@@ -873,68 +874,68 @@ onMounted(getPlans)
 }
 
 @media (max-width: 520px) {
-  .vip-nav {
+  .membership-nav {
     gap: 10px;
     padding: 0 12px;
   }
 
-  .vip-brand {
+  .membership-brand {
     margin-right: auto;
     font-size: 13.5px;
   }
 
-  .vip-brand-mark {
+  .membership-brand-mark {
     width: 28px;
     height: 28px;
   }
 
-  .vip-brand-mark svg {
+  .membership-brand-mark svg {
     width: 16px;
     height: 16px;
   }
 
-  .vip-nav-divider,
-  .vip-nav-label {
+  .membership-nav-divider,
+  .membership-nav-label {
     display: none;
   }
 
-  .vip-back {
+  .membership-back {
     gap: 2px;
     padding: 0 9px 0 6px;
   }
 
-  .vip-back span {
+  .membership-back span {
     display: none;
   }
 
-  .vip-main {
+  .membership-main {
     padding: 18px 12px 20px;
   }
 
-  .vip-eyebrow {
+  .membership-eyebrow {
     display: none;
   }
 
-  .vip-title {
+  .membership-title {
     margin: 0 0 6px;
     font-size: 24px;
     line-height: 1.3;
   }
 
-  .vip-subtitle {
+  .membership-subtitle {
     font-size: 12px;
     line-height: 1.6;
   }
 
-  .vip-hero {
+  .membership-hero {
     margin-bottom: 14px;
   }
 
-  .vip-plans {
+  .membership-plans {
     gap: 10px;
   }
 
-  .vip-plan {
+  .membership-plan {
     padding: 16px;
     border-radius: 14px;
   }
@@ -997,7 +998,7 @@ onMounted(getPlans)
     border-radius: 9px;
   }
 
-  .vip-footnote {
+  .membership-footnote {
     align-items: flex-start;
     margin-top: 14px;
     padding: 0 2px;
@@ -1008,13 +1009,14 @@ onMounted(getPlans)
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vip-plan,
-  .vip-back,
+
+  .membership-plan,
+  .membership-back,
   .plan-btn {
     transition: none;
   }
 
-  .vip-plan:hover {
+  .membership-plan:hover {
     transform: none;
   }
 }
@@ -1022,9 +1024,9 @@ onMounted(getPlans)
 
 <!--
   用法（父组件中）：
-  import VipPage from './components/VipPage.vue'
+  import MembershipPage from './components/MembershipPage.vue'
 
-  <VipPage v-if="showVip" @close="showVip = false" />
+  <MembershipPage v-if="showMembership" @close="showMembership = false" />
 
-  建议放在 App.vue 根层级，用 v-if 整页切换；vip-page 自带 100dvh 与滚动。
+  建议放在 App.vue 根层级，用 v-if 整页切换；membership-page 自带 100dvh 与滚动。
 -->

@@ -4,14 +4,14 @@ import SideDrawer from './components/SideDrawer.vue'
 import AuthPage from './components/AuthPage.vue'
 import { ref } from 'vue'
 import { useChatStore } from './stores/chat'
-import VipPage from './components/VipPage.vue'
+import MembershipPage from './components/MembershipPage.vue'
 
 const chat = useChatStore()
 const token = ref(localStorage.getItem('token') || '')
 const isDrawerOpen = ref(window.innerWidth > 900)
-const sessions = ref([])
+const conversations = ref([])
 const chatKey = ref(0)
-const showVip = ref(false)
+const showMembership = ref(false)
 
 function onLogin(accessToken) {
   token.value = accessToken
@@ -19,7 +19,7 @@ function onLogin(accessToken) {
 }
 
 function startNewChat() {
-  chat.currentSessionId = null
+  chat.currentConversationId = null
   chat.messages = []
   chat.title = '启问'
   chatKey.value += 1
@@ -28,11 +28,12 @@ function startNewChat() {
 </script>
 
 <template>
-  <VipPage v-if="token && showVip" @close="showVip = false" />
+  <MembershipPage v-if="token && showMembership" @close="showMembership = false" />
   <AuthPage v-else-if="!token" @login-success="onLogin" />
 
   <div v-else class="layout-container">
-    <SideDrawer v-model="isDrawerOpen" v-model:sessions="sessions" :token="token" @openVipPage="showVip = true" />
+    <SideDrawer v-model="isDrawerOpen" v-model:conversations="conversations" :token="token"
+      @openMembershipPage="showMembership = true" />
 
     <div class="drawer-backdrop" :class="{ visible: isDrawerOpen }" aria-hidden="true" @click="isDrawerOpen = false">
     </div>
@@ -59,7 +60,7 @@ function startNewChat() {
           <span>新对话</span>
         </button>
 
-        <button class="new-btn vip-entry-btn" type="button" @click="showVip = true">
+        <button class="new-btn membership-entry-btn" type="button" @click="showMembership = true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
             stroke-linejoin="round" aria-hidden="true">
             <path d="M4 18h16M5 8l4 3 3-5 3 5 4-3-2 8H7L5 8Z" />
@@ -68,7 +69,7 @@ function startNewChat() {
         </button>
       </header>
 
-      <Chat :key="chatKey" :token="token" v-model="sessions" />
+      <Chat :key="chatKey" :token="token" v-model="conversations" />
     </div>
   </div>
 </template>

@@ -21,21 +21,22 @@ async def start(req: StartRequest, db: AsyncSession = Depends(get_db),
 @router.post('/chat')
 async def chat(req: ChatRequest, db: AsyncSession = Depends(get_db),
                user: User = Depends(get_current_user)):
-    return await tutor.chat(req.session_id, user, req.content, db)
+    return await tutor.chat(req.conversation_id, user, req.content, db)
 
-@router.get("/history/{session_id}")
+
+@router.get("/history/{conversation_id}")
 async def get_history(
-    session_id: int,
+    conversation_id: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user)
 ):
-    messages = await tutor.get_history(session_id, user, db)
+    messages = await tutor.get_history(conversation_id, user, db)
 
-    return {"session_id": session_id, "messages": messages}
+    return {"conversation_id": conversation_id, "messages": messages}
 
 
-@router.get('/sessions')
-async def get_sessions(
+@router.get('/conversations')
+async def get_conversations(
     user: User = Depends(get_current_user),
 ):
-    return {'sessions': await tutor.get_sessions(user)}
+    return {'conversations': await tutor.get_conversations(user)}

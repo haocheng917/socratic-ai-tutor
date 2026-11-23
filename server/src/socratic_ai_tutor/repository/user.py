@@ -8,7 +8,7 @@ from socratic_ai_tutor.models import User
 class UserRepository:
     @staticmethod
     async def get_user_by_id(db: AsyncSession, user_id: int, for_update: bool = False):
-        stmt = select(User).options(selectinload(User.sessions),
+        stmt = select(User).options(selectinload(User.conversations),
                                     selectinload(User.orders)).where(User.id == user_id)
         if for_update:
             stmt = stmt.with_for_update()

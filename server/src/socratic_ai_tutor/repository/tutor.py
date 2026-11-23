@@ -1,28 +1,28 @@
 from sqlalchemy import select
 
-from ..models import TutorSession, User
+from ..models import TutorConversation, User
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class TutorRepository:
     @staticmethod
-    async def create_session(db: AsyncSession, title: str, user_id: int, messages: list):
-        tutor_session = TutorSession(
-            messages=messages, 
-            title=title, 
+    async def create_conversation(db: AsyncSession, title: str, user_id: int, messages: list):
+        tutor_conversation = TutorConversation(
+            messages=messages,
+            title=title,
             user_id=user_id,
             membership_plan='Free'
         )
-        db.add(tutor_session)
+        db.add(tutor_conversation)
         await db.flush()
         await db.commit()
-        return tutor_session.id
+        return tutor_conversation.id
 
     @staticmethod
-    async def get_session(db: AsyncSession, id: int):
-        return await db.scalar(select(TutorSession).where(TutorSession.id == id))
+    async def get_conversation(db: AsyncSession, id: int):
+        return await db.scalar(select(TutorConversation).where(TutorConversation.id == id))
 
     @staticmethod
-    async def update_messages(db: AsyncSession, session: TutorSession, messages: list):
-        session.messages = messages
+    async def update_messages(db: AsyncSession, conversation: TutorConversation, messages: list):
+        conversation.messages = messages
         await db.commit()
