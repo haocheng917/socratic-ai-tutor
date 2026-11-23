@@ -11,13 +11,30 @@ from socratic_ai_tutor.repository.order import OrderRepository
 
 MEMBERSHIP_PLANS = [
     {
+        'code': 'free',
+        'name': 'Free',
+        'price': 0,
+        'duration_days': None,
+        "conversation_limit": 3,
+        "conversation_limit_type": "lifetime",
+        "conversation_token_limit": 8000,
+        'describe': [
+            '仅 3 次对话',
+            '单对话长度有限'
+        ]
+    },
+    {
         'code': 'plus',
         'name': 'Plus',
         'price': 2400,
         'duration_days': 30,
+        "conversation_limit": 10,
+        "conversation_limit_type": "daily",
+        "conversation_token_limit": 10000,
         'describe': [
-            '每日 20 次对话',
-            '解锁错题功能'
+            '每日 10 次对话',
+            '解锁错题功能',
+            '单对话长度 8000 Token'
         ]
     },
     {
@@ -25,9 +42,13 @@ MEMBERSHIP_PLANS = [
         'name': 'Pro',
         'price': 4800,
         'duration_days': 30,
+        "conversation_limit": 20,
+        "conversation_limit_type": "daily",
+        "conversation_token_limit": 50000,
         'describe': [
-            '每日 50 次对话',
+            '每日 20 次对话',
             '解锁错题功能',
+            '单对话长度 10000 Token',
             '升级时，当前会员剩余时间将按照原套餐与新套餐的价格比例折算，并计入新会员有效期。'
         ]
     },
@@ -83,7 +104,8 @@ def convert_membership_time(
 async def activate_membership(user: User, order: Order):
     now = datetime.now(timezone.utc)
     plan = next(
-        (p for p in MEMBERSHIP_PLANS if p["code"] == order.plan_code),
+        (p for p in MEMBERSHIP_PLANS if p["code"] ==
+         order.plan_code and p['code'] != 'free'),
         None
     )
 
@@ -104,7 +126,6 @@ async def activate_membership(user: User, order: Order):
 
         if old_plan is None:
             raise HTTPException(500, '当前会员套餐配置异常')
-
 
         remaining = user.membership_expire_at - now
         user.membership_expire_at = (

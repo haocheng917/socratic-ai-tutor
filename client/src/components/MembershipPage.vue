@@ -1,6 +1,6 @@
 <!--
   会员中心页
-  - 套餐：免费档由前端内置，付费档来自 GET /membership/plans
+  - 套餐：全部来自 GET /membership/plans（含 free）
   - 仅 UI 与套餐加载，不含下单/支付逻辑
   - 点击「返回」会向父组件派发 close 事件：<MembershipPage @close="..." />
 -->
@@ -18,23 +18,15 @@ const plans = ref([])
 const isLoading = ref(true)
 const loadError = ref('')
 
-/* 免费档由前端提供，付费档来自 GET /membership/plans */
-const FREE_PLAN = {
-  code: 'free',
-  name: '轻享版',
-  desc: '偶尔来问，够用就好',
-  price: 0,
-  period: '/ 永久',
-  badge: '',
-  tag: '',
-  tone: 'sage',
-  features: ['仅有 20 次提问', '基础题目拆解与追问'],
-  cta: '免费开始',
-  recommended: false,
-}
-
-/* 后端套餐名是 Plus / Pro，这里补上页面展示用的文案 */
+/* 套餐展示文案：code 与后端 MEMBERSHIP_PLANS 对应 */
 const PLAN_META = {
+  free: {
+    name: '轻享版',
+    desc: '偶尔来问，够用就好',
+    tone: 'sage',
+    cta: '免费开始',
+    recommended: false,
+  },
   plus: {
     name: '进阶版',
     desc: '高频学习者的日常选择',
@@ -92,12 +84,10 @@ function normalizePlan(plan, index) {
 
 function normalizePlans(data) {
   const list = Array.isArray(data) ? data : Array.isArray(data?.plans) ? data.plans : []
-  const paidPlans = list
-    .filter((plan) => plan && plan.code && plan.code !== 'free')
+  return list
+    .filter((plan) => plan && plan.code)
     .sort((a, b) => Number(a.price) - Number(b.price))
     .map(normalizePlan)
-
-  return [FREE_PLAN, ...paidPlans]
 }
 
 async function getPlans() {
