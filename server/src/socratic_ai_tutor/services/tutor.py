@@ -5,6 +5,7 @@ from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 from socratic_ai_tutor.core.security import get_current_user
+from socratic_ai_tutor.database import get_db
 from socratic_ai_tutor.models import User
 from socratic_ai_tutor.services.membership import get_conversation_limit
 from socratic_ai_tutor.utils.message import resolve_messages_urls
@@ -19,6 +20,7 @@ client = AsyncOpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
 
 async def check_conversation_quota(
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     limit, limit_type = get_conversation_limit(user)
 
@@ -30,10 +32,12 @@ async def check_conversation_quota(
         if user.daily_reset_at is None or now >= user.daily_reset_at:
             user.daily_reset_at = get_next_reset_time(now)
             user.daily_conversations = 0
+            await db.flush()
         if user.daily_conversations >= limit:
             raise HTTPException(403, "对话次数额度已用完")
 
     return user
+
 
 async def start(content, user: User, db: AsyncSession):
     messages = [
