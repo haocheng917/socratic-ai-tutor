@@ -29,8 +29,6 @@ class User(Base):
     )
     password: Mapped[str] = mapped_column(String, nullable=False)
 
-    credits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-
     membership_plan: Mapped[str] = mapped_column(
         String, nullable=False, default="free"
     )
@@ -44,6 +42,16 @@ class User(Base):
     )
     orders: Mapped[list["Order"]] = relationship(
         back_populates="user"
+    )
+
+    lifetime_conversations: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
+    daily_conversations: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
+    daily_reset_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
 

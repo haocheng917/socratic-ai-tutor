@@ -1,21 +1,41 @@
+from datetime import datetime, timezone
 from typing import cast
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
+from socratic_ai_tutor.core.security import get_current_user
 from socratic_ai_tutor.models import User
+from socratic_ai_tutor.services.membership import get_conversation_limit
 from socratic_ai_tutor.utils.message import resolve_messages_urls
+from socratic_ai_tutor.utils.time import get_next_reset_time
 
-from .oss import StorageService
 from ..config import API_KEY
 from ..repository.tutor import TutorRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 client = AsyncOpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
 
 
-async def start(content, user_id: int, db: AsyncSession):
+async def check_conversation_quota(
+    user: User = Depends(get_current_user),
+):
+    limit, limit_type = get_conversation_limit(user)
+
+    if limit_type == 'lifetime':
+        if user.lifetime_conversations >= limit:
+            raise HTTPException(403, "对话次数额度已用完")
+    elif limit_type == 'daily':
+        now = datetime.now(timezone.utc)
+        if user.daily_reset_at is None or now >= user.daily_reset_at:
+            user.daily_reset_at = get_next_reset_time(now)
+            user.daily_conversations = 0
+        if user.daily_conversations >= limit:
+            raise HTTPException(403, "对话次数额度已用完")
+
+    return user
+
+async def start(content, user: User, db: AsyncSession):
     messages = [
         {
             "role": "system",
@@ -41,8 +61,12 @@ async def start(content, user_id: int, db: AsyncSession):
     title = response.choices[0].message.model_dump().get("title") or "新会话"
     content = response.choices[0].message.content
     messages.append({"role": "assistant", "content": content})
-    conversation_id = await TutorRepository.create_conversation(db, title, user_id, messages)
+    conversation_id = await TutorRepository.create_conversation(db, title, user.id, messages)
     print(response.usage)
+
+    user.daily_conversations += 1
+    user.lifetime_conversations += 1
+    await db.commit()
 
     return {"id": conversation_id, "content": content}
 

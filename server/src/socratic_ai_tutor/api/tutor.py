@@ -13,9 +13,9 @@ router = APIRouter(prefix="/tutor", tags=["Tutor"])
 
 @router.post('/start')
 async def start(req: StartRequest, db: AsyncSession = Depends(get_db),
-                user: User = Depends(get_current_user)):
+                user: User = Depends(tutor.check_conversation_quota)):
     content_dict = req.model_dump()["content"]
-    return await tutor.start(content_dict, user.id, db)
+    return await tutor.start(content_dict, user, db)
 
 
 @router.post('/chat')

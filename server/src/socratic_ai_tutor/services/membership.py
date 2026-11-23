@@ -142,3 +142,27 @@ async def activate_membership(user: User, order: Order):
 
     user.membership_plan = plan['code']
     order.status = 'completed'
+
+
+def get_effective_membership(user: User) -> str:
+    now = datetime.now(timezone.utc)
+
+    if (
+        user.membership_plan == "free"
+        or user.membership_expire_at is None
+        or user.membership_expire_at <= now
+    ):
+        return "free"
+
+    return user.membership_plan
+
+
+def get_conversation_limit(user: User):
+    plan_code = get_effective_membership(user)
+
+    plan = next(
+        p for p in MEMBERSHIP_PLANS
+        if p["code"] == plan_code
+    )
+
+    return plan["conversation_limit"], plan["conversation_limit_type"]
