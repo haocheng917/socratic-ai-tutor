@@ -6,12 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 class TutorRepository:
     @staticmethod
-    async def create_conversation(db: AsyncSession, title: str, user_id: int, messages: list):
+    async def create_conversation(db: AsyncSession, user_id: int, messages: list):
         tutor_conversation = TutorConversation(
             messages=messages,
-            title=title,
             user_id=user_id,
-            membership_plan='Free'
         )
         db.add(tutor_conversation)
         await db.flush()

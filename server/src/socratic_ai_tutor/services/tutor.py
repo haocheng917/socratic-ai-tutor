@@ -39,40 +39,17 @@ async def check_conversation_quota(
     return user
 
 
-async def start(content, user: User, db: AsyncSession):
+async def start(user: User, db: AsyncSession):
     messages = [
         {
             "role": "system",
             "content": "以初中数学老师的身份向用户讲解这道题目，使用初中方法，返回格式为标准的Markdown，通过与用户不断的对话和提问，苏格拉底式的引导用户解题，每次引导一步",
         },
-        {
-            "role": "user",
-            "content": content
-        },
     ]
 
-    response = await client.chat.completions.create(
-        model="deepseek-flash",
-        messages=cast(list[ChatCompletionMessageParam],
-                      resolve_messages_urls(messages)),
-        reasoning_effort="high",
-        extra_body={
-            "thinking": {"type": "enabled"},
-            "title": {"enabled": True}
-        },
-    )
+    conversation_id = await TutorRepository.create_conversation(db, user.id, messages)
 
-    title = response.choices[0].message.model_dump().get("title") or "新会话"
-    content = response.choices[0].message.content
-    messages.append({"role": "assistant", "content": content})
-    conversation_id = await TutorRepository.create_conversation(db, title, user.id, messages)
-    print(response.usage)
-
-    user.daily_conversations += 1
-    user.lifetime_conversations += 1
-    await db.commit()
-
-    return {"id": conversation_id, "content": content}
+    return {"id": conversation_id}
 
 
 async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
@@ -85,21 +62,47 @@ async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
     messages = list(conversation.messages)
     messages.append({"role": "user", "content": user_text})
 
-    response = await client.chat.completions.create(
+    await TutorRepository.update_messages(db, conversation, messages)
+
+    is_first_message = conversation.title is None
+    stream = await client.chat.completions.create(
         model="deepseek-flash",
         messages=cast(list[ChatCompletionMessageParam],
                       resolve_messages_urls(messages)),
         reasoning_effort="high",
-        extra_body={"thinking": {"type": "enabled"}},
+        stream=True,
+        extra_body={
+            "thinking": {"type": "enabled"},
+            "title": {"enabled": is_first_message}
+        },
     )
 
-    content = response.choices[0].message.content
+    content = ""
+    title = None
+    usage = None
+    async for chunk in stream:
+        delta = chunk.choices[0].delta
+
+        if delta.content:
+            content += delta.content
+            yield {
+                "type": "content",
+                "content": delta.content
+            }
+
+        if chunk.usage:
+            usage = chunk.usage
+
+        if delta.title:  # type: ignore
+            title = delta.title  # type: ignore
+            yield {
+                "type": "title",
+                "title": delta.title # type: ignore
+            }
+
     messages.append({"role": "assistant", "content": content})
-    print(response.usage)
 
     await TutorRepository.update_messages(db, conversation, messages)
-
-    return {"id": conversation_id, "content": content}
 
 
 async def get_history(conversation_id: int, user: User, db: AsyncSession):

@@ -12,7 +12,7 @@ class Base(DeclarativeBase):
 class TutorConversation(Base):
     __tablename__ = "tutor_conversations"
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String)
+    title: Mapped[str | None] = mapped_column(String, nullable=True)
     messages: Mapped[list] = mapped_column(JSONB, default=list)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False)
