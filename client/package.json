@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mdit/plugin-katex": "^1.2.0",
+    "@microsoft/fetch-event-source": "^2.0.1",
     "dompurify": "^3.4.17",
     "katex": "^0.19.1",
     "markdown-it": "^15.0.3",

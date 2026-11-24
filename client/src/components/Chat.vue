@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { renderMarkdown } from '../utils/markdown'
 import { useChatStore } from '../stores/chat'
 import { readError, toErrorMessage } from '../utils/http'
+import { streamChat } from '../utils/chatStream'
 import ErrorNotice from './ErrorNotice.vue'
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL
@@ -21,6 +22,10 @@ const isLoadingHistory = ref(false)
 const inputMessage = ref('')
 const chatBody = ref(null)
 const inputEl = ref(null)
+
+// 流式回复：streamText 是正在接收的内容，streamingConversationId 标记它属于哪个会话
+const streamText = ref('')
+const streamingConversationId = ref(null)
 
 // 新建会话时跳过历史加载，切换历史会话时才拉取
 let skipNextLoad = false
@@ -97,6 +102,75 @@ const hasUserText = computed(() => chat.messages.some(
   (message) => message.role === 'user' && typeof message.content === 'string',
 ))
 
+// 只有回复所属会话仍是当前会话时才展示流式内容，
+// 避免用户中途切换会话后旧回复串到新会话里
+const streamingText = computed(() => (
+  streamingConversationId.value !== null
+  && streamingConversationId.value === chat.currentConversationId
+    ? streamText.value
+    : ''
+))
+
+// 已发出请求、但还没收到第一个 token 时，才显示“正在想下一步…”
+const isWaitingReply = computed(() => (
+  isSending.value
+  && streamingConversationId.value === chat.currentConversationId
+  && !streamingText.value
+))
+
+function updateConversationTitle(conversationId, nextTitle) {
+  if (!nextTitle) return
+
+  if (Array.isArray(appConversations.value)) {
+    const target = appConversations.value.find((item) => item.id === conversationId)
+    if (target) {
+      target.title = nextTitle
+    } else {
+      appConversations.value.push({ id: conversationId, title: nextTitle })
+    }
+  }
+
+  if (chat.currentConversationId === conversationId) {
+    chat.title = nextTitle
+  }
+}
+
+// 调用 /tutor/chat，按 SSE 事件增量更新界面。
+// content 可以是纯文本，也可以是 OpenAI 多模态数组（图片）
+async function requestChat(conversationId, content) {
+  streamingConversationId.value = conversationId
+  streamText.value = ''
+
+  try {
+    await streamChat({
+      baseUrl,
+      token: props.token,
+      conversationId,
+      content,
+      onContent(chunk) {
+        streamText.value += chunk
+      },
+      onTitle(nextTitle) {
+        updateConversationTitle(conversationId, nextTitle)
+      },
+    })
+
+    // 流结束后后端已把这一轮写入数据库，本地同步落一条完整消息
+    if (streamText.value && chat.currentConversationId === conversationId) {
+      chat.messages.push({ role: 'assistant', content: streamText.value })
+    }
+  } catch (error) {
+    // 流中断时保留已收到的部分内容，避免已显示的内容突然消失
+    if (streamText.value && chat.currentConversationId === conversationId) {
+      chat.messages.push({ role: 'assistant', content: streamText.value })
+    }
+    throw error
+  } finally {
+    streamText.value = ''
+    streamingConversationId.value = null
+  }
+}
+
 function scrollToBottom() {
   nextTick(() => {
     if (chatBody.value) {
@@ -106,7 +180,7 @@ function scrollToBottom() {
 }
 
 watch(
-  () => [chat.messages.length, isSending.value],
+  () => [chat.messages.length, isSending.value, streamingText.value],
   () => scrollToBottom(),
 )
 
@@ -151,9 +225,30 @@ async function onFileSelect(event) {
   uploadError.value = ''
   sendError.value = ''
 
+  let conversationId = null
+
   try {
     const img = await upload(file)
 
+    // 1. 先建一个空会话：/tutor/start 现在不接收题目内容，也不再直接生成回复
+    const startRes = await fetch(`${baseUrl}/tutor/start`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${props.token}`
+      }
+    })
+
+    if (!startRes.ok) {
+      throw new Error(await readError(startRes, '获取回复失败'))
+    }
+
+    const startData = await startRes.json()
+    conversationId = startData.id
+
+    // 2. 本地先展示用户上传的图片（界面用可访问的 url，后端记录 key）
+    skipNextLoad = true
+    historyError.value = ''
+    chat.currentConversationId = conversationId
     chat.messages.push({
       'role': 'user', 'content': [
         {
@@ -162,39 +257,29 @@ async function onFileSelect(event) {
         }
       ]
     })
-
-    const res = await fetch(`${baseUrl}/tutor/start`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${props.token}`
-      },
-      body: JSON.stringify({
-        'content': [
-          {
-            "type": "image_url",
-            "image_url": { "url": img.key },
-          }
-        ]
-      })
-    })
-
-    if (!res.ok) {
-      throw new Error(await readError(res, '获取回复失败'))
-    }
-
-    const data = await res.json()
-    skipNextLoad = true
-    historyError.value = ''
-    chat.currentConversationId = data.id
-    chat.messages.push({ 'role': 'assistant', 'content': data.content })
     if (appConversations.value) {
-      appConversations.value.push({ 'title': '新对话', 'id': chat.currentConversationId })
+      appConversations.value.push({ 'id': conversationId, 'title': null })
     }
+
+    // 3. 图片作为第一轮用户消息发给 /tutor/chat，流式接收第一次引导
+    //    后端按 img.key 存库，读取历史时再换成可访问的 URL
+    await requestChat(conversationId, [
+      {
+        "type": "image_url",
+        "image_url": { "url": img.key },
+      }
+    ])
   } catch (error) {
     console.error(error)
-    chat.messages = []
-    uploadError.value = toErrorMessage(error, '上传失败，请重试')
+    const message = toErrorMessage(error, '上传失败，请重试')
+    if (conversationId === null) {
+      // 会话都没建起来，退回上传页展示错误
+      chat.messages = []
+      uploadError.value = message
+    } else {
+      // 会话已创建，留在对话页用输入框上方的错误条提示
+      sendError.value = message
+    }
   } finally {
     isSending.value = false
   }
@@ -206,33 +291,18 @@ async function onSend() {
   if (!chat.currentConversationId) return
 
   const conversationId = chat.currentConversationId
-  const user_text = inputMessage.value.trim()
-  chat.messages.push({ 'role': 'user', 'content': user_text })
+  const userText = inputMessage.value.trim()
+
+  chat.messages.push({ 'role': 'user', 'content': userText })
   inputMessage.value = ''
   sendError.value = ''
   nextTick(() => {
     resizeInput()
   })
 
+  isSending.value = true
   try {
-    isSending.value = true
-    const res = await fetch(`${baseUrl}/tutor/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${props.token}`
-      },
-      body: JSON.stringify({ 'conversation_id': conversationId, 'content': user_text })
-    })
-
-    if (!res.ok) {
-      throw new Error(await readError(res, '发送失败'))
-    }
-
-    const data = await res.json()
-    if (chat.currentConversationId === conversationId) {
-      chat.messages.push({ 'role': 'assistant', 'content': data.content })
-    }
+    await requestChat(conversationId, userText)
   } catch (error) {
     console.error('发送失败：', error)
     sendError.value = toErrorMessage(error, '发送失败，请稍后重试')
@@ -277,7 +347,15 @@ function onEnter(event) {
           </div>
         </div>
 
-        <div v-if="isSending" class="message left" role="status" aria-label="正在回复">
+        <!-- 流式回复：边接收边渲染 -->
+        <div v-if="streamingText" class="message left">
+          <div class="avatar" aria-hidden="true">问</div>
+          <div class="bubble">
+            <div class="markdown-body" v-html="renderMarkdown(streamingText)"></div>
+          </div>
+        </div>
+
+        <div v-if="isWaitingReply" class="message left" role="status" aria-label="正在回复">
           <div class="avatar" aria-hidden="true">问</div>
           <div class="bubble typing-bubble">
             <span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
