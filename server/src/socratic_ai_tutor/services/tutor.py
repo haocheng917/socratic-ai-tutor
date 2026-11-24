@@ -49,6 +49,10 @@ async def start(user: User, db: AsyncSession):
 
     conversation_id = await TutorRepository.create_conversation(db, user.id, messages)
 
+    user.daily_conversations += 1
+    user.lifetime_conversations += 1
+    await db.commit()
+
     return {"id": conversation_id}
 
 
@@ -97,7 +101,7 @@ async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
             title = delta.title  # type: ignore
             yield {
                 "type": "title",
-                "title": delta.title # type: ignore
+                "title": delta.title  # type: ignore
             }
 
     messages.append({"role": "assistant", "content": content})
