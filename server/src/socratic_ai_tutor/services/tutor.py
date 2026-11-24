@@ -102,7 +102,7 @@ async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
 
     messages.append({"role": "assistant", "content": content})
 
-    await TutorRepository.update_messages(db, conversation, messages)
+    await TutorRepository.update_messages(db, conversation, messages, title)
 
 
 async def get_history(conversation_id: int, user: User, db: AsyncSession):
