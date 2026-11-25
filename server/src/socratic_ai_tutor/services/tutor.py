@@ -97,11 +97,11 @@ async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
         if chunk.usage:
             usage = chunk.usage
 
-        if delta.title:  # type: ignore
+        if hasattr(delta, "title"):
             title = delta.title  # type: ignore
             yield {
                 "type": "title",
-                "title": delta.title  # type: ignore
+                "title": title
             }
 
     messages.append({"role": "assistant", "content": content})
