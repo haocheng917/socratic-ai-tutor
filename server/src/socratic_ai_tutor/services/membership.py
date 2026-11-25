@@ -9,9 +9,8 @@ from socratic_ai_tutor.models import Order, User
 from socratic_ai_tutor.repository.order import OrderRepository
 
 
-MEMBERSHIP_PLANS = [
-    {
-        'code': 'free',
+MEMBERSHIP_PLANS = {
+    'free': {
         'name': 'Free',
         'price': 0,
         'duration_days': None,
@@ -23,8 +22,7 @@ MEMBERSHIP_PLANS = [
             '单对话长度有限'
         ]
     },
-    {
-        'code': 'plus',
+    'plus': {
         'name': 'Plus',
         'price': 2400,
         'duration_days': 30,
@@ -37,8 +35,7 @@ MEMBERSHIP_PLANS = [
             '单对话长度 8000 Token'
         ]
     },
-    {
-        'code': 'pro',
+    'pro': {
         'name': 'Pro',
         'price': 4800,
         'duration_days': 30,
@@ -52,19 +49,21 @@ MEMBERSHIP_PLANS = [
             '升级时，当前会员剩余时间将按照原套餐与新套餐的价格比例折算，并计入新会员有效期。'
         ]
     },
-]
+}
+
+
+def list_membership_plans() -> list[dict]:
+    """将 MEMBERSHIP_PLANS 展开为带 code 的列表，供接口返回。"""
+    return [{'code': code, **plan} for code, plan in MEMBERSHIP_PLANS.items()]
 
 
 async def create_membership_order(user: User, plan_code: str, db: AsyncSession):
-    plan = next(
-        (p for p in MEMBERSHIP_PLANS if p["code"] == plan_code),
-        None
-    )
+    plan = MEMBERSHIP_PLANS.get(plan_code)
 
     if plan is None:
         raise HTTPException(status_code=404, detail='套餐不存在')
 
-    return await OrderRepository.create_order(db, plan, user.id)
+    return await OrderRepository.create_order(db, plan_code, plan, user.id)
 
 
 async def get_membership_orders(user: User, db: AsyncSession):
@@ -103,26 +102,20 @@ def convert_membership_time(
 
 async def activate_membership(user: User, order: Order):
     now = datetime.now(timezone.utc)
-    plan = next(
-        (p for p in MEMBERSHIP_PLANS if p["code"] ==
-         order.plan_code and p['code'] != 'free'),
-        None
-    )
+    plan_code = order.plan_code
+    plan = MEMBERSHIP_PLANS.get(plan_code)
 
-    if plan is None:
+    if plan is None or plan_code == 'free':
         raise HTTPException(status_code=404, detail='套餐不存在')
 
     if user.membership_expire_at is None or user.membership_expire_at < now:
         user.membership_expire_at = now + timedelta(days=plan['duration_days'])
     else:
 
-        if user.membership_plan == 'pro' and plan['code'] == 'plus':
+        if user.membership_plan == 'pro' and plan_code == 'plus':
             raise HTTPException(400, '不允许降级会员')
 
-        old_plan = next(
-            (p for p in MEMBERSHIP_PLANS if p["code"] == user.membership_plan),
-            None
-        )
+        old_plan = MEMBERSHIP_PLANS.get(user.membership_plan)
 
         if old_plan is None:
             raise HTTPException(500, '当前会员套餐配置异常')
@@ -140,7 +133,7 @@ async def activate_membership(user: User, order: Order):
             )
         )
 
-    user.membership_plan = plan['code']
+    user.membership_plan = plan_code
     order.status = 'completed'
 
 
@@ -159,10 +152,6 @@ def get_effective_membership(user: User) -> str:
 
 def get_conversation_limit(user: User):
     plan_code = get_effective_membership(user)
-
-    plan = next(
-        p for p in MEMBERSHIP_PLANS
-        if p["code"] == plan_code
-    )
+    plan = MEMBERSHIP_PLANS[plan_code]
 
     return plan["conversation_limit"], plan["conversation_limit_type"]

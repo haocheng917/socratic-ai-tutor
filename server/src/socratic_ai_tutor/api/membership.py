@@ -14,7 +14,7 @@ router = APIRouter(prefix="/membership", tags=["Membership"])
 
 @router.get('/plans')
 def get_plans():
-    return membership.MEMBERSHIP_PLANS
+    return membership.list_membership_plans()
 
 
 @router.post('/orders')

@@ -6,10 +6,10 @@ from socratic_ai_tutor.models import Order
 
 class OrderRepository:
     @staticmethod
-    async def create_order(db: AsyncSession, plan: dict, user_id: int):
+    async def create_order(db: AsyncSession, plan_code: str, plan: dict, user_id: int):
         order = Order(
             user_id=user_id,
-            plan_code=plan['code'],
+            plan_code=plan_code,
             amount=plan['price'],
             duration_days=plan['duration_days'],
             status="pending",
