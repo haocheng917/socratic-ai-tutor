@@ -16,7 +16,7 @@ MEMBERSHIP_PLANS = {
         'duration_days': None,
         "conversation_limit": 3,
         "conversation_limit_type": "lifetime",
-        "conversation_token_limit": 8000,
+        "conversation_token_limit": 80,
         'describe': [
             '仅 3 次对话',
             '单对话长度有限'

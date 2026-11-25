@@ -1,11 +1,13 @@
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from socratic_ai_tutor.core.security import get_current_user
 from socratic_ai_tutor.models import User
+from socratic_ai_tutor.repository.tutor import TutorRepository
+from socratic_ai_tutor.services.membership import MEMBERSHIP_PLANS
 
 from ..schema.tutor import ChatRequest
 from ..database import get_db
@@ -23,9 +25,17 @@ async def start(db: AsyncSession = Depends(get_db),
 @router.post('/chat')
 async def chat(req: ChatRequest, db: AsyncSession = Depends(get_db),
                user: User = Depends(get_current_user)):
+    conversation = await TutorRepository.get_conversation(db, req.conversation_id)
+    if conversation is None:
+        raise HTTPException(status_code=404, detail="会话不存在")
+    elif conversation.user_id != user.id:
+        raise HTTPException(status_code=403, detail="无权访问该对话")
+    elif conversation.context_tokens >= int(MEMBERSHIP_PLANS[user.membership_plan].get('conversation_token_limit', 128000000)):
+        raise HTTPException(status_code=429, detail="对话长度超过限制，升级会员以获得更大限制")
+
     async def event_generator():
         async for event in tutor.chat(
-            req.conversation_id, user, req.content, db
+            conversation, user, req.content, db
         ):
             data = json.dumps(event, ensure_ascii=False)
             yield f"data: {data}\n\n"

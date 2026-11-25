@@ -16,6 +16,10 @@ class TutorConversation(Base):
     messages: Mapped[list] = mapped_column(
         MutableList.as_mutable(JSONB), default=list
     )
+    context_tokens: Mapped[int] = mapped_column(
+        default=0,
+        nullable=False
+    )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False)
 

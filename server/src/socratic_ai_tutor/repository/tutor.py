@@ -21,8 +21,10 @@ class TutorRepository:
         return await db.scalar(select(TutorConversation).where(TutorConversation.id == id))
 
     @staticmethod
-    async def update_messages(db: AsyncSession, conversation: TutorConversation, messages: list, title: str | None = None):
+    async def update_messages(db: AsyncSession, conversation: TutorConversation, messages: list, title: str | None = None, tokens: int | None = None):
         conversation.messages = list(messages)
+        if tokens:
+            conversation.context_tokens = tokens
         if title:
             conversation.title = title
         await db.commit()

@@ -6,7 +6,7 @@ from openai.types.chat import ChatCompletionMessageParam
 
 from socratic_ai_tutor.core.security import get_current_user
 from socratic_ai_tutor.database import get_db
-from socratic_ai_tutor.models import User
+from socratic_ai_tutor.models import TutorConversation, User
 from socratic_ai_tutor.services.membership import get_conversation_limit
 from socratic_ai_tutor.utils.message import resolve_messages_urls
 from socratic_ai_tutor.utils.time import get_next_reset_time
@@ -56,13 +56,7 @@ async def start(user: User, db: AsyncSession):
     return {"id": conversation_id}
 
 
-async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
-    conversation = await TutorRepository.get_conversation(db, conversation_id)
-    if conversation is None:
-        raise HTTPException(status_code=404, detail="会话不存在")
-    elif conversation.user_id != user.id:
-        raise HTTPException(status_code=403, detail="无权访问该对话")
-
+async def chat(conversation: TutorConversation, user: User, user_text, db: AsyncSession):
     messages = conversation.messages
     messages.append({"role": "user", "content": user_text})
 
@@ -106,7 +100,7 @@ async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
 
     messages.append({"role": "assistant", "content": content})
 
-    await TutorRepository.update_messages(db, conversation, messages, title)
+    await TutorRepository.update_messages(db, conversation, messages, title, usage.total_tokens if usage else None)
 
 
 async def get_history(conversation_id: int, user: User, db: AsyncSession):
