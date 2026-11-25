@@ -22,7 +22,7 @@ class TutorRepository:
 
     @staticmethod
     async def update_messages(db: AsyncSession, conversation: TutorConversation, messages: list, title: str | None = None):
-        conversation.messages = messages
+        conversation.messages = list(messages)
         if title:
             conversation.title = title
         await db.commit()

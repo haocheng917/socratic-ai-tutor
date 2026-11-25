@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
-
+from sqlalchemy.ext.mutable import MutableList
 
 class Base(DeclarativeBase):
     pass
@@ -13,7 +13,9 @@ class TutorConversation(Base):
     __tablename__ = "tutor_conversations"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str | None] = mapped_column(String, nullable=True)
-    messages: Mapped[list] = mapped_column(JSONB, default=list)
+    messages: Mapped[list] = mapped_column(
+        MutableList.as_mutable(JSONB), default=list
+    )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False)
 

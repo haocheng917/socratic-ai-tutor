@@ -63,7 +63,7 @@ async def chat(conversation_id: int, user: User, user_text, db: AsyncSession):
     elif conversation.user_id != user.id:
         raise HTTPException(status_code=403, detail="无权访问该对话")
 
-    messages = list(conversation.messages)
+    messages = conversation.messages
     messages.append({"role": "user", "content": user_text})
 
     await TutorRepository.update_messages(db, conversation, messages)
