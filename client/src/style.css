@@ -663,6 +663,83 @@ label:focus-visible {
   line-height: 1.35;
 }
 
+/* 新建对话时的教学方式滑块 */
+.mode-picker {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.mode-picker-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.mode-switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.mode-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  height: calc(100% - 6px);
+  border-radius: 7px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(35, 40, 36, 0.12);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mode-switch-thumb.is-direct {
+  transform: translateX(100%);
+}
+
+.mode-option {
+  position: relative;
+  z-index: 1;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.18s ease;
+}
+
+.mode-option:hover:not(:disabled) {
+  color: var(--ink-soft);
+}
+
+.mode-option.active {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.mode-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.mode-hint {
+  min-height: 18px;
+  margin: 7px 0 0;
+  color: var(--muted-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .upload-card {
   display: flex;
   align-items: center;

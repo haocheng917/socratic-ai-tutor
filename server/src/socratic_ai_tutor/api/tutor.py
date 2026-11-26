@@ -5,11 +5,11 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from socratic_ai_tutor.core.security import get_current_user
-from socratic_ai_tutor.models import User
+from socratic_ai_tutor.models import TutorMode, User
 from socratic_ai_tutor.repository.tutor import TutorRepository
 from socratic_ai_tutor.services.membership import MEMBERSHIP_PLANS
 
-from ..schema.tutor import ChatRequest
+from ..schema.tutor import ChatRequest, StartRequest
 from ..database import get_db
 from ..services import tutor
 
@@ -17,9 +17,9 @@ router = APIRouter(prefix="/tutor", tags=["Tutor"])
 
 
 @router.post('/start')
-async def start(db: AsyncSession = Depends(get_db),
+async def start(req: StartRequest, db: AsyncSession = Depends(get_db),
                 user: User = Depends(tutor.check_conversation_quota)):
-    return await tutor.start(user, db)
+    return await tutor.start(user, req.tutor_mode, db)
 
 
 @router.post('/chat')

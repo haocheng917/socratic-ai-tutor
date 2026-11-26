@@ -6,7 +6,7 @@ from openai.types.chat import ChatCompletionMessageParam
 
 from socratic_ai_tutor.core.security import get_current_user
 from socratic_ai_tutor.database import get_db
-from socratic_ai_tutor.models import TutorConversation, User
+from socratic_ai_tutor.models import TutorConversation, TutorMode, User
 from socratic_ai_tutor.services.membership import get_conversation_limit
 from socratic_ai_tutor.utils.message import resolve_messages_urls
 from socratic_ai_tutor.utils.time import get_next_reset_time
@@ -16,6 +16,27 @@ from ..repository.tutor import TutorRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 client = AsyncOpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
+
+PROMPT = {
+    TutorMode.SOCRATIC: """
+你是一名耐心、专业的 AI 导师，擅长通过苏格拉底式教学引导学生学习。
+
+请根据用户的问题和回答，逐步引导其独立思考、理解知识并解决问题。
+
+每次只引导一步，通过恰当的问题和提示推动学习，不要直接给出完整答案。
+
+必须遵循用户当前学习阶段的知识范围。优先使用与用户所学教材中的知识和方法。
+""",
+    TutorMode.DIRECT: """
+你是一名耐心、专业的 AI 导师，擅长清晰地讲解知识。
+
+请直接回答用户的问题，系统、完整地解释相关知识和解题过程，帮助用户理解核心原理。
+
+根据问题难度调整讲解深度，表达清晰、简洁，避免无关拓展。
+
+必须遵循用户当前学习阶段的知识范围。优先使用与用户所学教材中的知识和方法。
+"""
+}
 
 
 async def check_conversation_quota(
@@ -39,15 +60,15 @@ async def check_conversation_quota(
     return user
 
 
-async def start(user: User, db: AsyncSession):
+async def start(user: User, tutor_mode: TutorMode, db: AsyncSession):
     messages = [
         {
             "role": "system",
-            "content": "以初中数学老师的身份向用户讲解这道题目，使用初中方法，返回格式为标准的Markdown，通过与用户不断的对话和提问，苏格拉底式的引导用户解题，每次引导一步",
+            "content": PROMPT[tutor_mode]
         },
     ]
 
-    conversation_id = await TutorRepository.create_conversation(db, user.id, messages)
+    conversation_id = await TutorRepository.create_conversation(db, user.id, messages, tutor_mode)
 
     user.daily_conversations += 1
     user.lifetime_conversations += 1

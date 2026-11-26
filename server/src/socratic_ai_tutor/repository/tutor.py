@@ -1,15 +1,16 @@
 from sqlalchemy import select
 
-from ..models import TutorConversation, User
+from ..models import TutorConversation, TutorMode
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class TutorRepository:
     @staticmethod
-    async def create_conversation(db: AsyncSession, user_id: int, messages: list):
+    async def create_conversation(db: AsyncSession, user_id: int, messages: list, tutor_mode: TutorMode):
         tutor_conversation = TutorConversation(
             messages=messages,
             user_id=user_id,
+            tutor_mode=tutor_mode
         )
         db.add(tutor_conversation)
         await db.flush()

@@ -23,6 +23,34 @@ const inputMessage = ref('')
 const chatBody = ref(null)
 const inputEl = ref(null)
 
+// 新建对话时选择教学方式，只有第一次 /tutor/start 会用到
+const tutorModes = [
+  { value: 'socratic', label: '苏格拉底式', hint: '用提问一步步引导你思考，不急着给答案。' },
+  { value: 'direct', label: '直接讲解', hint: '直接讲清知识点和解题步骤，随时可以追问。' },
+]
+const tutorMode = ref('socratic')
+const activeMode = computed(
+  () => tutorModes.find((mode) => mode.value === tutorMode.value) || tutorModes[0],
+)
+const guideSteps = computed(() => (
+  tutorMode.value === 'direct'
+    ? ['上传题目照片', '我直接讲解思路', '你随时追问细节']
+    : ['上传题目照片', '我先问你一个问题', '你在下方回答，我继续追问']
+))
+
+// 单选滑块支持左右方向键切换，和原生 radio 的行为保持一致
+function onModeKeydown(event) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+  event.preventDefault()
+  const current = tutorModes.findIndex((mode) => mode.value === tutorMode.value)
+  const next = (current + (event.key === 'ArrowRight' ? 1 : -1) + tutorModes.length) % tutorModes.length
+  tutorMode.value = tutorModes[next].value
+  event.currentTarget
+    .closest('.mode-switch')
+    ?.querySelectorAll('.mode-option')[next]
+    ?.focus()
+}
+
 // 流式回复：streamText 是正在接收的内容，streamingConversationId 标记它属于哪个会话
 const streamText = ref('')
 const streamingConversationId = ref(null)
@@ -230,12 +258,14 @@ async function onFileSelect(event) {
   try {
     const img = await upload(file)
 
-    // 1. 先建一个空会话：/tutor/start 现在不接收题目内容，也不再直接生成回复
+    // 1. 先建一个空会话，并把这次选择的教学方式交给后端
     const startRes = await fetch(`${baseUrl}/tutor/start`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${props.token}`
-      }
+        'Authorization': `Bearer ${props.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ tutor_mode: tutorMode.value }),
     })
 
     if (!startRes.ok) {
@@ -404,6 +434,20 @@ function onEnter(event) {
     <div v-else class="chat-welcome">
       <h1 class="welcome-title">把题目照片传上来</h1>
 
+      <div class="mode-picker">
+        <span class="mode-picker-label">教学方式</span>
+        <div class="mode-switch" role="radiogroup" aria-label="选择教学方式">
+          <span class="mode-switch-thumb" :class="`is-${tutorMode}`" aria-hidden="true"></span>
+          <button v-for="mode in tutorModes" :key="mode.value" class="mode-option"
+            :class="{ active: tutorMode === mode.value }" type="button" role="radio"
+            :aria-checked="tutorMode === mode.value" :tabindex="tutorMode === mode.value ? 0 : -1"
+            :disabled="isSending" @click="tutorMode = mode.value" @keydown="onModeKeydown">
+            {{ mode.label }}
+          </button>
+        </div>
+        <p class="mode-hint">{{ activeMode.hint }}</p>
+      </div>
+
       <label class="upload-card" :class="{ busy: isSending }">
         <input type="file" accept="image/*" :disabled="isSending" @change="onFileSelect">
         <span class="upload-icon" aria-hidden="true">
@@ -431,9 +475,10 @@ function onEnter(event) {
 
       <div class="welcome-guide">
         <ol class="guide-list">
-          <li class="guide-item"><span class="guide-num">1</span><span class="guide-copy">上传题目照片</span></li>
-          <li class="guide-item"><span class="guide-num">2</span><span class="guide-copy">我先问你一个问题</span></li>
-          <li class="guide-item"><span class="guide-num">3</span><span class="guide-copy">你在下方回答，我继续追问</span></li>
+          <li v-for="(step, index) in guideSteps" :key="step" class="guide-item">
+            <span class="guide-num">{{ index + 1 }}</span>
+            <span class="guide-copy">{{ step }}</span>
+          </li>
         </ol>
       </div>
     </div>

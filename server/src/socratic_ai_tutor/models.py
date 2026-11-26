@@ -1,6 +1,8 @@
+from enum import Enum
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableList
@@ -9,12 +11,22 @@ class Base(DeclarativeBase):
     pass
 
 
+class TutorMode(str, Enum):
+    SOCRATIC = "socratic"
+    DIRECT = "direct"
+
+
 class TutorConversation(Base):
     __tablename__ = "tutor_conversations"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str | None] = mapped_column(String, nullable=True)
     messages: Mapped[list] = mapped_column(
         MutableList.as_mutable(JSONB), default=list
+    )
+    tutor_mode: Mapped[TutorMode] = mapped_column(
+        SQLEnum(TutorMode),
+        default=TutorMode.SOCRATIC,
+        nullable=False
     )
     context_tokens: Mapped[int] = mapped_column(
         default=0,
@@ -59,6 +71,12 @@ class User(Base):
     daily_reset_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    # tutor_mode: Mapped[TutorMode] = mapped_column(
+    #     SQLEnum(TutorMode),
+    #     default=TutorMode.SOCRATIC,
+    #     nullable=False
+    # )
 
 
 class Order(Base):
