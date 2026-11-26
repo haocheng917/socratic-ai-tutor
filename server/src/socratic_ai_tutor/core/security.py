@@ -6,8 +6,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from socratic_ai_tutor.config import SECRET_KEY, JWT_ALGORITHM
-from socratic_ai_tutor.database import get_db
+from socratic_ai_tutor.core.config import settings
+from socratic_ai_tutor.core.database import get_db
 import jwt
 from jwt import PyJWTError
 
@@ -21,7 +21,7 @@ def create_access_token(user_id: int) -> str:
 
     to_encode = {"sub": str(user_id), "exp": expire}
 
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
 async def get_current_user(
@@ -30,7 +30,7 @@ async def get_current_user(
 ):
     token = credentials.credentials
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         user_id = int(payload.get('sub'))
     except (PyJWTError, TypeError):
         raise HTTPException(status_code=401, detail="登录已过期，请重新登录",

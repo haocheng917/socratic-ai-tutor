@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from socratic_ai_tutor.core.security import get_current_user
-from socratic_ai_tutor.database import get_db
+from socratic_ai_tutor.core.database import get_db
 from socratic_ai_tutor.models import User
 from socratic_ai_tutor.repository.order import OrderRepository
 from socratic_ai_tutor.repository.user import UserRepository

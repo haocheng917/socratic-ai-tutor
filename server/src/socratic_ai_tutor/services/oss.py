@@ -1,11 +1,11 @@
 import datetime
-from ..config import OSS_BUCKET, OSS_REGION, OSS_EXPIRE_SECONDS, REDIS_TTL_SECONDS
+from ..core.config import settings
 import alibabacloud_oss_v2 as oss
 from uuid import uuid4
 import redis
 
 cfg = oss.config.load_default()
-cfg.region = OSS_REGION
+cfg.region = settings.OSS_REGION
 cfg.credentials_provider = oss.credentials.EnvironmentVariableCredentialsProvider()
 client = oss.Client(cfg)
 
@@ -20,7 +20,7 @@ class StorageService:
             key = f"{uuid4().hex}{image_ext}"
             client.put_object(
                 oss.PutObjectRequest(
-                    bucket=OSS_BUCKET,
+                    bucket=settings.OSS_BUCKET,
                     key=key,
                     body=image_bytes
                 )
@@ -34,8 +34,8 @@ class StorageService:
         try:
             print(f'Key: {key}')
             presign_result = client.presign(
-                oss.GetObjectRequest(bucket=OSS_BUCKET, key=key),
-                expires=datetime.timedelta(seconds=OSS_EXPIRE_SECONDS)
+                oss.GetObjectRequest(bucket=settings.OSS_BUCKET, key=key),
+                expires=datetime.timedelta(seconds=settings.OSS_EXPIRE_SECONDS)
             )
             print(presign_result)
             return presign_result.url
@@ -58,7 +58,7 @@ class StorageService:
 
         if fresh_url:
             try:
-                redis_client.set(cache_key, fresh_url, ex=REDIS_TTL_SECONDS)
+                redis_client.set(cache_key, fresh_url, ex=settings.REDIS_TTL_SECONDS)
             except Exception as e:
                 print(f"Redis 写入失败: {e}")
 

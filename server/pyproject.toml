@@ -13,6 +13,7 @@ dependencies = [
     "openai>=3.46.0",
     "passlib[bcrypt]>=1.7.4",
     "pillow>=13.0.0",
+    "pydantic-settings>=2.16.3",
     "pyjwt>=2.15.1",
     "python-multipart>=0.0.33",
     "redis>=8.1.0",

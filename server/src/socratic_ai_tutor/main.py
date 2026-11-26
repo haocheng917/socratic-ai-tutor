@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from socratic_ai_tutor.api import auth, membership
-from .database import engine
+from .core.database import engine
 from .models import Base
 from .api import tutor, upload
 

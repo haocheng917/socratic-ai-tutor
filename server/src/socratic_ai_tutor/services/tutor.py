@@ -5,17 +5,18 @@ from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
 from socratic_ai_tutor.core.security import get_current_user
-from socratic_ai_tutor.database import get_db
+from socratic_ai_tutor.core.database import get_db
 from socratic_ai_tutor.models import TutorConversation, TutorMode, User
 from socratic_ai_tutor.services.membership import get_conversation_limit
 from socratic_ai_tutor.utils.message import resolve_messages_urls
 from socratic_ai_tutor.utils.time import get_next_reset_time
 
-from ..config import API_KEY
+from ..core.config import settings
 from ..repository.tutor import TutorRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
-client = AsyncOpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
+client = AsyncOpenAI(api_key=settings.TUTOR_API_KEY,
+                     base_url=settings.TUTOR_BASE_URL)
 
 PROMPT = {
     TutorMode.SOCRATIC: """
@@ -85,7 +86,7 @@ async def chat(conversation: TutorConversation, user: User, user_text, db: Async
 
     is_first_message = conversation.title is None
     stream = await client.chat.completions.create(
-        model="deepseek-flash",
+        model=settings.TUTOR_MODEL,
         messages=cast(list[ChatCompletionMessageParam],
                       resolve_messages_urls(messages)),
         reasoning_effort="high",

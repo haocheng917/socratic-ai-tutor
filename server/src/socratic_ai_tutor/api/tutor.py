@@ -10,7 +10,7 @@ from socratic_ai_tutor.repository.tutor import TutorRepository
 from socratic_ai_tutor.services.membership import MEMBERSHIP_PLANS
 
 from ..schema.tutor import ChatRequest, StartRequest
-from ..database import get_db
+from ..core.database import get_db
 from ..services import tutor
 
 router = APIRouter(prefix="/tutor", tags=["Tutor"])

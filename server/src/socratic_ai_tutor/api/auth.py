@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from socratic_ai_tutor.core.security import get_current_user
-from socratic_ai_tutor.database import get_db
+from socratic_ai_tutor.core.database import get_db
 from socratic_ai_tutor.models import User
 from socratic_ai_tutor.schema.auth import UserLogin, UserMe, UserRegister
 from ..services import auth
