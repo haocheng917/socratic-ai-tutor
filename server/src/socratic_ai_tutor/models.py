@@ -1,11 +1,13 @@
 from enum import Enum
 from datetime import datetime, timezone
+from typing import List, Union
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.mutable import MutableList
+from openai.types.chat import ChatCompletionContentPartParam
+
 
 class Base(DeclarativeBase):
     pass
@@ -20,8 +22,8 @@ class TutorConversation(Base):
     __tablename__ = "tutor_conversations"
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str | None] = mapped_column(String, nullable=True)
-    messages: Mapped[list] = mapped_column(
-        MutableList.as_mutable(JSONB), default=list
+    messages: Mapped[list["Message"]] = relationship(
+        back_populates='conversation'
     )
     tutor_mode: Mapped[TutorMode] = mapped_column(
         SQLEnum(TutorMode),
@@ -36,6 +38,20 @@ class TutorConversation(Base):
         ForeignKey("users.id"), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="conversations")
+
+
+class Message(Base):
+    __tablename__ = "messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("tutor_conversations.id"), nullable=False)
+
+    role: Mapped[str] = mapped_column(String, nullable=False)
+    content: Mapped[Union[str, List[ChatCompletionContentPartParam]]
+                    ] = mapped_column(JSONB, nullable=False)
+
+    conversation: Mapped['TutorConversation'] = relationship(
+        back_populates='messages')
 
 
 class User(Base):

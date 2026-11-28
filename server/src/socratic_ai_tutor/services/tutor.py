@@ -6,7 +6,7 @@ from openai.types.chat import ChatCompletionMessageParam
 
 from socratic_ai_tutor.core.security import get_current_user
 from socratic_ai_tutor.core.database import get_db
-from socratic_ai_tutor.models import TutorConversation, TutorMode, User
+from socratic_ai_tutor.models import Message, TutorConversation, TutorMode, User
 from socratic_ai_tutor.services.membership import get_conversation_limit
 from socratic_ai_tutor.utils.message import resolve_messages_urls
 from socratic_ai_tutor.utils.time import get_next_reset_time
@@ -62,33 +62,48 @@ async def check_conversation_quota(
 
 
 async def start(user: User, tutor_mode: TutorMode, db: AsyncSession):
-    messages = [
-        {
-            "role": "system",
-            "content": PROMPT[tutor_mode]
-        },
-    ]
 
-    conversation_id = await TutorRepository.create_conversation(db, user.id, messages, tutor_mode)
+    import sys
+    for name, module in sys.modules.items():
+        if name.endswith("socratic_ai_tutor.models"):
+            print(name, module.__file__, id(module))
+
+    print("TutorConversation:", TutorConversation)
+    print("Message relationship:", Message.conversation.property.mapper.class_)
+    print(
+        "Same class:",
+        TutorConversation is Message.conversation.property.mapper.class_
+    )
+
+    conversation = await TutorRepository.create_conversation(db, user.id, tutor_mode)
+    conversation.messages.append(
+        Message(
+            role="system",
+            content=PROMPT[tutor_mode]
+        )
+    )
 
     user.daily_conversations += 1
     user.lifetime_conversations += 1
     await db.commit()
 
-    return {"id": conversation_id}
+    return {"id": conversation.id}
 
 
 async def chat(conversation: TutorConversation, user: User, user_text, db: AsyncSession):
-    messages = conversation.messages
-    messages.append({"role": "user", "content": user_text})
-
-    await TutorRepository.update_messages(db, conversation, messages)
+    conversation.messages.append(
+        Message(
+            role="user",
+            content=user_text,
+        )
+    )
+    await db.flush()
 
     is_first_message = conversation.title is None
     stream = await client.chat.completions.create(
         model=settings.TUTOR_MODEL,
         messages=cast(list[ChatCompletionMessageParam],
-                      resolve_messages_urls(messages)),
+                      resolve_messages_urls(conversation.messages)),
         reasoning_effort="high",
         stream=True,
         extra_body={
@@ -120,9 +135,14 @@ async def chat(conversation: TutorConversation, user: User, user_text, db: Async
                 "title": title
             }
 
-    messages.append({"role": "assistant", "content": content})
+    conversation.messages.append(
+        Message(
+            role="assistant",
+            content=content
+        )
+    )
 
-    await TutorRepository.update_messages(db, conversation, messages, title, usage.total_tokens if usage else None)
+    await TutorRepository.update_conversation(db, conversation, title, usage.total_tokens if usage else None)
 
 
 async def get_history(conversation_id: int, user: User, db: AsyncSession):

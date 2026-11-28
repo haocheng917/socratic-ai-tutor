@@ -3,20 +3,24 @@ import copy
 from ..services.oss import StorageService
 
 
-def resolve_messages_urls(messages: list):
-    new_messages = copy.deepcopy(messages)
+def resolve_messages_urls(messages: list) -> list[dict]:
+    new_messages = []
 
-    for msg in new_messages:
-        if isinstance(msg['content'], str):
-            continue
+    for msg in messages:
+        content = copy.deepcopy(msg.content)
 
-        content = msg['content'][0]
-        if content['type'] != 'image_url':
-            continue
+        if isinstance(content, list):
+            for item in content:
+                if item.get("type") != "image_url":
+                    continue
 
-        content['image_url']['url'] = StorageService.get_cached_url(
-            content['image_url']['url'])
+                item["image_url"]["url"] = StorageService.get_cached_url(
+                    item["image_url"]["url"]
+                )
 
-    print(new_messages)
+        new_messages.append({
+            "role": msg.role,
+            "content": content,
+        })
 
     return new_messages
